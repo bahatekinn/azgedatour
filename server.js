@@ -22,44 +22,54 @@ io.on('connection', (socket) => {
     // OYUNCU ODA KODUNU GÖNDERİNCE ÇALIŞACAK
     socket.on('oda-degis', (yeniOda) => {
         socket.join(yeniOda);
-        socket.currentRoom = yeniOda; // Hangi odada olduğunu kaydettik
+        socket.currentRoom = yeniOda; 
         
         // Bağlanan oyuncuya festivalleri gönder
         socket.emit('festival-bilgisi', festivaller);
     });
 
-    // SOHBET (Artık odaya özel)
-   // Örnek olarak mesaj-yolla kısmını güvenli hale getirelim:
-socket.on('mesaj-yolla', (data) => {
-    if (socket.currentRoom) {
-        io.to(socket.currentRoom).emit('mesaj-al', data);
-    }
-});
+    // SOHBET
+    socket.on('mesaj-yolla', (data) => {
+        if (socket.currentRoom) {
+            io.to(socket.currentRoom).emit('mesaj-al', data);
+        }
+    });
 
-    // ZAR (Artık odaya özel)
+    // ZAR
     socket.on('zar-at', () => {
-        const zar1 = Math.floor(Math.random() * 6) + 1;
-        const zar2 = Math.floor(Math.random() * 6) + 1;
-        
-        io.to(socket.currentRoom).emit('zar-sonucu', { 
-            oyuncuId: socket.id, 
-            deger: zar1 + zar2, 
-            zar1: zar1, 
-            zar2: zar2,
-            cift: zar1 === zar2 
-        });
+        if (socket.currentRoom) {
+            const zar1 = Math.floor(Math.random() * 6) + 1;
+            const zar2 = Math.floor(Math.random() * 6) + 1;
+            
+            io.to(socket.currentRoom).emit('zar-sonucu', { 
+                oyuncuId: socket.id, 
+                deger: zar1 + zar2, 
+                zar1: zar1, 
+                zar2: zar2,
+                cift: zar1 === zar2 
+            });
+        }
     });
 
+    // MÜLK İŞLEMLERİ
     socket.on('mulk-islem', (data) => {
-        socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data);
+        if (socket.currentRoom) {
+            socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data);
+        }
     });
 
+    // UÇUŞ (DÜNYA TURU)
     socket.on('uctu', (data) => {
-        socket.to(socket.currentRoom).emit('uctu-bilgisi', data);
+        if (socket.currentRoom) {
+            socket.to(socket.currentRoom).emit('uctu-bilgisi', data);
+        }
     });
 
+    // PARA GÜNCELLEME
     socket.on('para-guncelle', (data) => {
-        socket.to(socket.currentRoom).emit('para-guncelle-bilgisi', data);
+        if (socket.currentRoom) {
+            socket.to(socket.currentRoom).emit('para-guncelle-bilgisi', data);
+        }
     });
 });
 
