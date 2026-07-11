@@ -1153,7 +1153,7 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
             clearInterval(stepInterval);
             if (callback) callback();
         }
-    }, 140);
+    }, 350);
 }
 
 
@@ -1733,6 +1733,7 @@ socket.on('zar-sonucu', (data) => {
                 ciftZarSayaci = 0; benimKarakter.pos = 8; benimKarakter.inJail = true;
                 showToast("🚨 3 Kez Çift Zar! Kayıp Ada'ya düştünüz.");
                 piyonuCiz(tumOyuncularListesi); ekranıYenile(); return;
+                if (!oyuncu) { console.error("Oyuncu bulunamadı:", oyuncuId); return; }
             }
         } else { ciftZarSayaci = 0; }
     }
