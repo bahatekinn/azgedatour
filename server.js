@@ -28,11 +28,15 @@ io.on('connection', (socket) => {
     // Bağlanan oyuncuya festivalleri gönder
     socket.emit('festival-bilgisi', festivaller);
 
+    // SOHBET ÖZELLİĞİ
+    socket.on('mesaj-yolla', (msg) => {
+        io.to(ANA_ODA).emit('mesaj-al', msg);
+    });
+
     socket.on('zar-at', () => {
         const zar1 = Math.floor(Math.random() * 6) + 1;
         const zar2 = Math.floor(Math.random() * 6) + 1;
         
-        // io.to(ANA_ODA) diyerek sadece bu odadaki kişilere sonucu gönderiyoruz
         io.to(ANA_ODA).emit('zar-sonucu', { 
             oyuncuId: socket.id, 
             deger: zar1 + zar2, 
@@ -43,7 +47,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('mulk-islem', (data) => {
-        // Sadece odadakilere gönder
         socket.to(ANA_ODA).emit('mulk-islem-bilgisi', data);
     });
 

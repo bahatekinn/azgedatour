@@ -443,7 +443,12 @@
     <!-- 2. ANA OYUN ARENASI -->
 
     <div class="game-container glass-panel" id="mainGameUI">
-
+<!-- Chat Alanı -->
+<div id="chat-box" style="margin-top:20px; border:1px solid #ff9f43; padding:10px; width:100%;">
+    <input type="text" id="chatInput" placeholder="Mesaj yaz...">
+    <button onclick="mesajGonder()">Gönder</button>
+    <div id="messages" style="color:white; font-size:12px; margin-top:5px;"></div>
+</div>
         <div class="board" id="game-board">
 
            
@@ -623,8 +628,9 @@
 
 
     <script src="/socket.io/socket.io.js"></script>
-
+S
     <script>
+        const socket = io();
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -639,6 +645,18 @@
             document.getElementById('muteBtn').innerText = isMuted ? "Sesi Aç 🔇" : "Sesi Kapat 🔊";
 
         }
+        function mesajGonder() {
+    const input = document.getElementById('chatInput');
+    if(input.value.trim() !== "") {
+        socket.emit('mesaj-yolla', input.value);
+        input.value = '';
+    }
+}
+
+socket.on('mesaj-al', (msg) => {
+    const div = document.getElementById('messages');
+    div.innerHTML += `<div>Arkadaş: ${msg}</div>`;
+});
 
 
 
