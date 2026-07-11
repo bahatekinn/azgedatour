@@ -1135,11 +1135,11 @@ function piyonuCiz(tumOyuncular) {
     });
 }
 
+// 1. DÜZELTİLMİŞ YÜRÜTME FONKSİYONU
 function piyonuYurut(oyuncuId, hedefPos, callback) {
     let oyuncu = tumOyuncularListesi.find(o => o.id === oyuncuId);
-    if (!oyuncu) return;
+    if (!oyuncu) { console.error("Oyuncu bulunamadı:", oyuncuId); return; }
 
-    // Hareketi başlatmadan önce mevcut interval'i temizle (çift tetiklenmeyi engeller)
     if (window.moveInterval) clearInterval(window.moveInterval);
 
     window.moveInterval = setInterval(() => {
@@ -1150,10 +1150,54 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
         }
         
         oyuncu.pos = (oyuncu.pos + 1) % 32;
-        piyonuCiz(tumOyuncularListesi);
+        piyonuCiz(tumOyuncularListesi); // Listeyi gönderiyoruz
         playSound('dice');
-    }, 500); // 500ms ile çok net kare kare yürür
+    }, 500); // HIZ: 500ms (daha yavaş ve akıcı)
 }
+
+// 2. DÜZELTİLMİŞ ZAR SONUCU BLOĞU
+socket.on('zar-sonucu', (data) => {
+    d1.classList.remove('dice-shake');
+    d2.classList.remove('dice-shake');
+    zarBtn.disabled = false;
+
+    d1.innerText = zarEmojileri[data.zar1];
+    d2.innerText = zarEmojileri[data.zar2];
+    addLog(`Zar Atıldı: [${data.deger}]`);
+
+    // Oyun mantığı
+    if (benimKarakter.inJail) {
+        if (data.cift) {
+            benimKarakter.inJail = false; benimKarakter.jailTurns = 0;
+            showToast("🔓 Çift zar! Kayıp Ada'dan kurtuldunuz.");
+        } else {
+            benimKarakter.jailTurns++;
+            if (benimKarakter.jailTurns >= 3) {
+                benimKarakter.inJail = false; benimKarakter.jailTurns = 0;
+                showToast("🔓 3 tur doldu, adadan serbest kaldınız.");
+            } else {
+                showToast("❌ Çift gelmedi! Adadasınız."); ekranıYenile(); return;
+            }
+        }
+    } else {
+        if (data.cift) {
+            ciftZarSayaci++;
+            if (ciftZarSayaci === 3) {
+                ciftZarSayaci = 0; benimKarakter.pos = 8; benimKarakter.inJail = true;
+                showToast("🚨 3 Kez Çift Zar! Kayıp Ada'ya düştünüz.");
+                piyonuCiz(tumOyuncularListesi); ekranıYenile(); return;
+            }
+        } else { ciftZarSayaci = 0; }
+    }
+
+    let yeniHedef = (benimKarakter.pos + data.deger) % 32;
+    // socket.id ile kendi karakterini hareket ettir
+    piyonuYurut(socket.id, yeniHedef, () => {
+        addLog(`${haritaDizisi[benimKarakter.pos].ad} konumuna varıldı.`);
+        if(haritaDizisi[benimKarakter.pos].color === "chance") { tetikleSansKarti(); }
+        else { aksiyonHesapla(benimKarakter.pos, data.cift); }
+    });
+});
 
         function ekranıYenile() {
 
@@ -1707,6 +1751,7 @@ socket.on('zar-sonucu', (data) => {
     d2.innerText = zarEmojileri[data.zar2];
     addLog(`Zar Atıldı: [${data.deger}]`);
 
+    // Oyun mantığı (Hapis ve Çift Zar)
     if (benimKarakter.inJail) {
         if (benimKarakter.hasJailCard) {
             benimKarakter.inJail = false; benimKarakter.jailTurns = 0; benimKarakter.hasJailCard = false;
@@ -1731,18 +1776,24 @@ socket.on('zar-sonucu', (data) => {
                 ciftZarSayaci = 0; benimKarakter.pos = 8; benimKarakter.inJail = true;
                 showToast("🚨 3 Kez Çift Zar! Kayıp Ada'ya düştünüz.");
                 piyonuCiz(tumOyuncularListesi); ekranıYenile(); return;
-                if (!oyuncu) { console.error("Oyuncu bulunamadı:", oyuncuId); return; }
             }
         } else { ciftZarSayaci = 0; }
     }
 
+    // Piyonu hareket ettir (Burada hedefi belirliyoruz)
     let yeniHedef = (benimKarakter.pos + data.deger) % 32;
+    benimKarakter.pos = yeniHedef; // Karakterin konumunu güncelle
+
     piyonuYurut(socket.id, yeniHedef, () => {
-        addLog(`${haritaDizisi[benimKarakter.pos].ad} konumuna varıldı.`);
-        if(haritaDizisi[benimKarakter.pos].color === "chance") { tetikleSansKarti(); }
-        else { aksiyonHesapla(benimKarakter.pos, data.cift); }
+        addLog(`${haritaDizisi[yeniHedef].ad} konumuna varıldı.`);
+        if(haritaDizisi[yeniHedef].color === "chance") { 
+            tetikleSansKarti(); 
+        } else { 
+            aksiyonHesapla(yeniHedef, data.cift); 
+        }
     });
 });
+</script>
 </script>
 
 
