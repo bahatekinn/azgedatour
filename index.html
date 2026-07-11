@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+
+<html lang="tr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Azgeda Tour</title>
+
+    <style>
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+       
+
+        html, body { height: auto; }
+
+        body {
+
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+            background: #000000 !important;
+
+            color: #ffffff;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: flex-start;
+
+            min-height: 200vh;
+
+            padding: 45px 45px 60px;
+
+            overflow-x: hidden;
+
+            overflow-y: auto;
+
+            user-select: none;
+
+        }
+
+       
+
+        body::before {
+
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.015'/%3E%3C/svg%3E");
+
+            pointer-events: none; z-index: 1;
+
+        }
+
+       
+
+        .top-status-bar { display: flex; gap: 40px; background: rgba(22, 25, 37, 0.9); border: 1px solid rgba(255,255,255,0.03); padding: 8px 30px; border-radius: 30px; margin-bottom: 12px; font-size: 13px; font-weight: bold; color: #cbd5e1; letter-spacing: 1px; z-index: 5; align-items: center; }
+
+        .top-status-bar span span { color: #ff9f43; font-family: monospace; font-size: 14px; }
+
+        .btn-mute { background: #1e293b; color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); padding: 3px 10px; font-size: 11px; border-radius: 20px; cursor: pointer; margin-left: 10px; }
+
+
+
+        .glass-panel { background: #161925; border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); z-index: 2; }
+
+
+
+        /* LOBİ GİRİŞ EKRANI */
+
+        #lobby-container { padding: 30px; width: 440px; text-align: center; z-index: 100; border: 1px solid rgba(255,159,67,0.2); background: #161925 !important; margin-top: 50px; }
+
+        .lobby-title { color: #ff9f43; font-size: 20px; font-weight: 800; margin-bottom: 20px; text-transform: uppercase; }
+
+        .input-group { margin-bottom: 20px; text-align: left; }
+
+        .input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #94a3b8; }
+
+        .input-group input { width: 100%; padding: 10px; background: #0b0c10; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: white; font-size: 14px; font-weight: bold; outline: none; }
+
+       
+
+        /* 6'LI RESİMLİ SEÇİM IZGARASI */
+
+        .avatar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+
+        .avatar-option {
+
+            background-color: #0b0c10;
+
+            border: 2px solid rgba(255,255,255,0.05);
+
+            border-radius: 8px;
+
+            height: 80px;
+
+            cursor: pointer;
+
+            background-size: cover;
+
+            background-position: center;
+
+            transition: 0.2s;
+
+        }
+
+        .avatar-option:hover { transform: translateY(-2px); border-color: #ff9f43; }
+
+        .avatar-option.selected { border-color: #ff9f43; background-color: rgba(255,159,67,0.1); transform: scale(1.03); box-shadow: 0 0 10px rgba(255,159,67,0.4); }
+
+
+
+        /* ANA OYUN ARENASI - ÖLÇEKLENDİRME */
+
+        .game-container { display: none; gap: 25px; align-items: flex-start; padding: 20px; border: 1px solid rgba(255,255,255,0.02); transform: scale(0.92); transform-origin: top center; }
+
+
+
+        /* HARİTA YAPISI */
+
+        .board { display: grid; grid-template-columns: repeat(9, 84px); grid-template-rows: repeat(9, 84px); gap: 5px; background: #040406; padding: 8px; border-radius: 20px; position: relative; border: 1px solid rgba(255,255,255,0.03); margin: 0 auto; }
+
+       
+
+        .cell { background: #131520; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 4px; font-size: 10px; font-weight: 700; position: relative; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.01); cursor: pointer; transition: all 0.2s ease; overflow: hidden; }
+
+        .cell:hover { transform: scale(1.05); z-index: 10; border-color: #ff9f43; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+
+       
+
+        .owner-ribbon { position: absolute; top: 0; left: 0; width: 100%; height: 6px; border-radius: 12px 12px 0 0; display: none; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+
+        .owner-ribbon.active { display: block; }
+
+       
+
+        .house-row { display: flex; gap: 1px; font-size: 10px; margin-top: 5px; min-height: 12px; }
+
+        .cell-img { font-size: 18px; margin: 1px 0; }
+
+        .special { background: #202430 !important; color: #ff9f43; justify-content: center; }
+
+        .resort { background: #0b473e !important; color: #fff; }
+
+
+
+        /* Coğrafi Bölge Şeritleri */
+
+        .c-marmara { border-bottom: 4px solid #e11d48; }
+
+        .c-ege { border-bottom: 4px solid #16a34a; }
+
+        .c-akdeniz { border-left: 4px solid #2563eb; }
+
+        .c-icanadolu { border-left: 4px solid #d97706; }
+
+        .c-karadeniz { border-top: 4px solid #0d9488; }
+
+        .c-dogu { border-top: 4px solid #7c3aed; }
+
+        .c-guneydogu { border-right: 4px solid #db2777; }
+
+        .c-chance { background: #475569 !important; color: #ff9f43 !important; }
+
+
+
+        .price-tag { font-size: 8px; color: #64748b; font-family: monospace; }
+
+        .board.flight-mode { border: 2px solid #ff9f43; box-shadow: 0 0 25px rgba(255,159,67,0.3); }
+
+
+
+        /* PİYON SİSTEMİ */
+
+        .pawn-container { display: flex; gap: 2px; position: absolute; bottom: 6px; align-items: center; justify-content: center; width: 100%; pointer-events: none; z-index: 20; flex-wrap: wrap; padding: 0 4px; }
+
+        .pawn-dot { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); background-size: cover; background-position: center; }
+
+
+/* TAHTA ORTASI - GÜNCEL VE DÜZGÜN HİZALAMA */
+  .center-area { 
+            grid-column: 2 / 9; 
+            grid-row: 2 / 9; 
+            background-color: #0c0e14;
+            background-image: url('/public/avatarlar/turkiye-harita.png'); 
+            
+            /* BURASI ÇOK ÖNEMLİ: Harita alanı kapsasın ama butonları itmesin */
+            background-size: cover; 
+            background-repeat: no-repeat;
+            background-position: center;
+            
+            /* Butonların üstte kalması için z-index ekliyoruz */
+            position: relative;
+            z-index: 1; 
+            
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 42px; 
+            padding: 40px; 
+            overflow: hidden; 
+        }
+
+        /* Zar kutusunu haritanın üzerinde biraz daha belirgin yapalım */
+        .center-dice-box { 
+            display: flex; gap: 200px; justify-content: center; margin-bottom: 1000000px; 
+            z-index: 500; /* Haritanın üzerinde kalması için z-index yüksek olmalı */
+            background: rgba(0, 0, 0, 0.4); /* Butonun arkasına hafif gölge ekler */
+            padding: 10px; border-radius: 320px;
+        }
+
+        /* Zar at butonunu da yukarı çekelim */
+        #zarBtn { z-index: 5; }
+
+        .particles-layer { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; opacity: 0.15; z-index: 1; }
+
+        .center-dice-box { display: flex; gap: 50px; justify-content: center; margin-bottom: 120px; z-index: 1; }
+
+        .dice-face { width: 55px; height: 55px; background: linear-gradient(135px, #ffffff 0%, #ffffff 100%); border: 2px solid #ffffff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 38px; color: #ff9f43; box-shadow: 0 6px 15px rgba(0,0,0,0.5); z-index: 5; }
+
+        .dice-shake { animation: shakeDice 0.08s infinite alternate; color: #ff4757; }
+
+        @keyframes shakeDice { 0% { transform: translate(2px, 1px) rotate(4deg); } 100% { transform: translate(-1px, -2px) rotate(-4deg); } }
+
+
+        /* BUSINESS TOUR PANELİ */
+
+        .build-menu-box { display: none; background: rgba(22, 25, 37, 0.95); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,159,67,0.3); margin-top: 10px; flex-direction: column; gap: 6px; width: 260px; z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+
+        .build-option-btn { background: #1e293b; color: white; border: none; padding: 10px; font-size: 11px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; width: 100%; font-weight: bold; border-left: 3px solid #ff9f43; }
+
+        .build-option-btn:hover:not(:disabled) { background: #f1f1f1; color: #0b0c10; }
+
+        .build-option-btn:disabled { opacity: 0.3; cursor: not-allowed; border-left-color: #444; }
+
+
+
+        .btn-pas-gec { background: #334155; color: white; border: none; padding: 8px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; width: 100%; text-align: center; margin-top: 4px; }
+
+        .btn-pas-gec:hover { background: #475569; }
+
+
+
+        /* SAĞ PANEL DÜZENİ */
+
+        .side-panel { display: flex; flex-direction: column; gap: 12px; width: 310px; }
+
+        .info-box { background: #0e1017; padding: 10px; border-radius: 8px; font-size: 11px; border: 1px solid rgba(255,255,255,0.02); min-height: 60px; max-height: 60px; overflow-y: auto; color: #64748b; }
+
+       
+
+        .player-card { background: #171a24; padding: 14px; border-radius: 14px; border-left: 6px solid #ff9f43; display: flex; flex-direction: column; gap: 10px; position: relative; border-top: 1px solid rgba(255,255,255,0.01); }
+
+        .player-card.active-turn { box-shadow: 0 0 20px rgba(255,159,67,0.25); background: #1d2130; }
+
+
+
+        .player-avatar-box {
+
+            width: 105px;
+
+            height: 102px;
+
+            border-radius: 12px;
+
+            border: 2px solid rgba(255,255,255,0.06);
+
+            background-size: cover;
+
+            background-position: center;
+
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+
+        }
+
+        .hud-main-info { display: flex; align-items: center; gap: 15px; width: 100%; }
+
+       
+
+        .player-info-meta { display: flex; flex-direction: column; flex-grow: 1; }
+
+        .player-info-meta strong { font-size: 15px; color: #f8fafc; }
+
+        .player-level-badge { font-size: 10px; color: #ff9f43; font-weight: bold; margin-bottom: 2px; }
+
+        .player-money { font-family: monospace; font-size: 17px; color: #66fcf1; font-weight: 700; }
+
+        .player-stats-row { display: flex; justify-content: space-between; font-size: 10px; color: #64748b; margin-top: 3px; }
+
+        .turn-badge { position: absolute; top: -6px; right: 10px; background: linear-gradient(135px, #ff9f43 0%, #ffb167 100%); color: #0b0c10; font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 4px; }
+
+
+
+        .owned-cities-title { font-size: 10px; font-weight: bold; color: #ff9f43; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 4px; width: 100%; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .owned-cities-list { display: flex; flex-wrap: wrap; gap: 4px; width: 100%; max-height: 45px; overflow-y: auto; }
+
+        .city-badge { background: #0b0c10; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); color: #cbd5e1; display: flex; align-items: center; gap: 3px; }
+
+
+
+        /* TAKAS PANELİ */
+
+        .trade-panel-box { background: #161925; border: 1px solid rgba(255,159,67,0.15); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+
+        .trade-title { font-size: 11px; font-weight: bold; color: #ffffff; text-transform: uppercase; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px; }
+
+        .trade-label { font-size: 10px; font-weight: bold; margin-bottom: -2px; color: #cbd5e1; }
+
+        .trade-select { width: 100%; background: #0b0c10; border: 1px solid #334155; padding: 14px; border-radius: 14px; color: white; font-size: 11px; outline: none; }
+
+        .trade-input { width: 100%; background: #0b0c10; border: 1px solid #334155; padding: 14px; border-radius: 14px; color: #66fcf1; font-size: 11px; font-family: monospace; outline: none; font-weight: bold; }
+
+        .btn-trade-submit { width: 100%; background: #ff9f43; color: #0f111a; padding: 8px; font-size: 11px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; text-transform: uppercase; margin-top: 4px; }
+
+
+
+        .hover-card { display: none; position: absolute; background: #161925; border: 1px solid #ff9f43; border-radius: 10px; padding: 12px; width: 180px; box-shadow: 0 15px 30px rgba(0,0,0,0.7); z-index: 500; pointer-events: none; font-size: 11px; border-top-width: 3px; }
+
+        .hover-card-title { font-weight: bold; margin-bottom: 6px; color: white; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; text-transform: uppercase; font-size: 12px; }
+
+        .hover-row { display: flex; justify-content: space-between; margin: 3px 0; font-family: monospace; color: #94a3b8; }
+
+        .hover-row span:last-child { color: #f1f5f9; }
+
+
+
+        .floating-cash { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: 900; pointer-events: none; z-index: 50; animation: floatUp 1s ease-out forwards; opacity: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+
+        @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) translateY(0); } 100% { opacity: 0; transform: translate(-50%, -50%) translateY(-70px); } }
+
+
+
+        #toast-container { position: fixed; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; pointer-events: none; }
+
+        .toast { background: rgba(22, 25, 37, 0.9); border-left: 4px solid #ff9f43; padding: 12px 20px; border-radius: 8px; color: white; font-size: 12px; font-weight: bold; box-shadow: 0 10px 25px rgba(0,0,0,0.5); animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, toastOut 0.3s ease-in 2.7s forwards; min-width: 200px; }
+
+        @keyframes toastIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+
+
+        .leaderboard-panel { background: rgba(21, 26, 33, 0.6); border-radius: 10px; padding: 10px; border: 1px solid rgba(255,255,255,0.02); }
+
+        .leaderboard-title { font-size: 11px; font-weight: bold; color: #ff9f43; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+
+        .leader-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.02); }
+
+        .leader-rank { font-weight: bold; color: #ff9f43; margin-right: 5px; }
+
+
+
+        button { padding: 11px; font-size: 13px; font-weight: 800; cursor: pointer; border: none; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; }
+
+        button:disabled { background: #252830 !important; color: #4b505c !important; cursor: not-allowed; box-shadow: none !important; }
+
+        .btn-dice { background: #ff9f43; color: #0f111a; width: 130px; box-shadow: 0 4px 12px rgba(255,159,67,0.25); z-index: 5; }
+
+        .btn-dice:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,159,67,0.4); }
+
+        .btn-action { background: #e11d48; color: white; display: none; margin-top: 2px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        .btn-lobby { background: #ff9f43; color: #0f111a; width: 100%; padding: 14px; font-size: 15px; border-radius: 8px; font-weight: bold; }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <!-- ÜST DURUM PANELİ -->
+
+    <div class="top-status-bar" id="topStatusBar" style="display:none;">
+
+        <span>TUR: <span id="top-tur">1</span></span>
+
+        <span>SÜRE: <span id="top-sure">00:00</span></span>
+
+        <span>KALAN OYUNCU: <span id="top-kalan">1</span></span>
+
+        <button class="btn-mute" id="muteBtn" onclick="toggleMute()">Sesi Kapat 🔊</button>
+
+    </div>
+
+
+
+    <h1>Azgeda Tour</h1>
+
+
+
+    <div id="toast-container"></div>
+
+
+
+    <!-- 1. LOBİ GİRİŞ EKRANI -->
+
+    <div id="lobby-container" class="glass-panel">
+
+        <div class="lobby-title">Karakterini Oluştur</div>
+
+        <div class="input-group">
+
+            <label for="usernameInput">Oyuncu Adı</label>
+
+            <input type="text" id="usernameInput" placeholder="Adınızı yazın...">
+
+        </div>
+
+        <div class="input-group">
+
+            <label>Profil Resmi Seç</label>
+
+            <div class="avatar-grid">
+
+                <div class="avatar-option selected" style="background-image: url('/public/avatarlar/avatar1.jpg');" onclick="selectAvatar(this, '/public/avatarlar/avatar1.jpg')"></div>
+
+                <div class="avatar-option" style="background-image: url('/public/avatarlar/avatar2.jpg');" onclick="selectAvatar(this, '/public/avatarlar/avatar2.jpg')"></div>
+
+                <div class="avatar-option" style="background-image: url('/public/avatarlar/avatar3.jpg');" onclick="selectAvatar(this, '/public/avatarlar/avatar3.jpg')"></div>
+
+                <div class="avatar-option" style="background-image: url('/public/avatarlar/avatar4.jpg');" onclick="selectAvatar(this, '/public/avatarlar/avatar4.jpg')"></div>
+
+                <div class="avatar-option" style="background-image: url('/public/avatarlar/avatar5.jpg');" onclick="selectAvatar(this, '/public/avatarlar/avatar5.jpg')"></div>
+
+                <div class="avatar-option" style="background-image: url('/public/avatarlar/avatar6.jpg');" onclick="selectAvatar(this, '/public/avatarlar/avatar6.jpg')"></div>
+
+            </div>
+
+        </div>
+
+        <button class="btn-lobby" id="startMatchBtn">Oyuna Gir 🎮</button>
+
+    </div>
+
+
+
+    <!-- 2. ANA OYUN ARENASI -->
+
+    <div class="game-container glass-panel" id="mainGameUI">
+
+        <div class="board" id="game-board">
+
+           
+
+            <div class="center-area">
+
+               
+
+                <canvas class="particles-layer" id="particlesCanvas"></canvas>
+
+               
+
+                <div class="center-dice-box">
+
+                    <div class="dice-face" id="d1">⚀</div>
+
+                    <div class="dice-face" id="d2">⚀</div>
+
+                </div>
+
+               
+
+                <button class="btn-dice" id="zarBtn">Zar At 🎲</button>
+
+
+
+                <!-- ORTA ALANA ALINAN BUSINESS TOUR PANELI -->
+
+                <div class="build-menu-box" id="buildMenu">
+
+                    <button class="build-option-btn" id="b-opt-0" onclick="buyMulkLevel(0)"><span>🏢 Sadece Arsa Al</span><span id="b-prc-0">-</span></button>
+
+                    <button class="build-option-btn" id="b-opt-1" onclick="buyMulkLevel(1)"><span>🏠 Arsa + 1 Ev</span><span id="b-prc-1">-</span></button>
+
+                    <button class="build-option-btn" id="b-opt-2" onclick="buyMulkLevel(2)"><span>🏠🏠 Arsa + 2 Ev</span><span id="b-prc-2">-</span></button>
+
+                    <button class="build-option-btn" id="b-opt-3" onclick="buyMulkLevel(3)"><span>🏨 Otel Dik!</span><span id="b-prc-3">-</span></button>
+
+                    <button class="btn-pas-gec" id="passTurnBtn" onclick="mulkPasGec()">Pas Geç ↩</button>
+
+                </div>
+
+            </div>
+
+
+
+        </div>
+
+
+
+        <div class="side-panel">
+
+            <div class="info-box" id="game-log">Tur günlükleri burada listelenir...</div>
+
+           
+
+            <button class="btn-action" id="payJailBtn">Kefalet Öde (200.000 ₺) 💸</button>
+
+
+
+            <!-- HUD KART PANELİ -->
+
+            <div class="player-card active-turn" id="playerHUDCard">
+
+                <div class="turn-badge">SIRA SENDE</div>
+
+                <div class="hud-main-info">
+
+                    <div class="player-avatar-box" id="hud-avatar"></div>
+
+                    <div class="player-info-meta">
+
+                        <strong id="hud-username">Oyuncu</strong>
+
+                        <div class="player-money" id="my-money">2.000.000 ₺</div>
+
+                        <div class="player-stats-row">
+
+                            <span id="stat-properties">🏢 0 mülk</span>
+
+                            <span id="stat-worth">⭐ 2.0M ₺</span>
+
+                        </div>
+
+                        <div id="jail-status" style="color:#e11d48; font-weight:800; display:none; margin-top:2px;">[KAYIP ADADA]</div>
+
+                    </div>
+
+                </div>
+
+               
+
+                <div class="owned-cities-title">Sahip Olduğun İller</div>
+
+                <div class="owned-cities-list" id="hud-owned-list"></div>
+
+            </div>
+
+
+
+            <!-- TAKAS PANELİ -->
+
+            <div class="trade-panel-box">
+
+                <div class="trade-title">🤝 Karakterler Arası Takas</div>
+
+               
+
+                <div class="trade-label">Senin Vereceğin İl:</div>
+
+                <select class="trade-select" id="myTradeMulk"></select>
+
+               
+
+                <div class="trade-label">Senin Ekleyin Para (₺):</div>
+
+                <input type="number" class="trade-input" id="myTradeCash" value="0" min="0">
+
+               
+
+                <div class="trade-title" style="margin-top:4px; font-size:9px; border:none;">↓↓ TAKAS EDİLECEK RAKİP VARLIĞI ↓↓</div>
+
+               
+
+                <div class="trade-label">Rakip Oyuncudan İstenen İl:</div>
+
+                <select class="trade-select" id="botTradeMulk"></select>
+
+               
+
+                <div class="trade-label">Rakip Oyuncudan İstenen Para (₺):</div>
+
+                <input type="number" class="trade-input" id="botTradeCash" value="0" min="0">
+
+
+
+                <button class="btn-trade-submit" onclick="executeRealPlayerTrade()">Takas Teklifi Gönder</button>
+
+            </div>
+
+
+
+            <div class="leaderboard-panel">
+
+                <div class="leaderboard-title">📊 Sıralama (Net Servet)</div>
+
+                <div id="leaderboard-rows"></div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- HOVER BİLGI KARTI PANELİ -->
+
+    <div class="hover-card" id="hoverCard">
+
+        <div class="hover-card-title" id="hc-title">Şehir</div>
+
+        <div class="hover-row"><span>Arsa Fiyatı:</span><span id="hc-price">-</span></div>
+
+        <div class="hover-row"><span>Mevcut Kira:</span><span id="hc-rent">-</span></div>
+
+        <div class="hover-row"><span>Bina Seviye:</span><span id="hc-level">-</span></div>
+
+        <div class="hover-row" style="margin-top:4px; border-top:1px dashed #555; padding-top:2px;"><span>Sahibi:</span><span id="hc-owner" style="color:#ff9f43;">Yok</span></div>
+
+    </div>
+
+
+
+    <div class="floating-cash" id="cashAnim"></div>
+
+
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        let isMuted = false;
+
+
+
+        function toggleMute() {
+
+            isMuted = !isMuted;
+
+            document.getElementById('muteBtn').innerText = isMuted ? "Sesi Aç 🔇" : "Sesi Kapat 🔊";
+
+        }
+
+
+
+        function playSound(type) {
+
+            if (isMuted) return;
+
+            const osc = audioCtx.createOscillator();
+
+            const gain = audioCtx.createGain();
+
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'dice') {
+
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+
+                osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+
+            } else if (type === 'money') {
+
+                osc.type = 'sine'; osc.frequency.setValueAtTime(950, audioCtx.currentTime); osc.frequency.setValueAtTime(1300, audioCtx.currentTime + 0.07);
+
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.18);
+
+                osc.start(); osc.stop(audioCtx.currentTime + 0.18);
+
+            } else if (type === 'build') {
+
+                osc.type = 'square'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.setValueAtTime(550, audioCtx.currentTime + 0.08);
+
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.22);
+
+                osc.start(); osc.stop(audioCtx.currentTime + 0.22);
+
+            }
+
+        }
+
+
+
+        function showToast(message) {
+
+            const container = document.getElementById('toast-container');
+
+            const toast = document.createElement('div');
+
+            toast.className = 'toast';
+
+            toast.innerText = message;
+
+            container.appendChild(toast);
+
+            setTimeout(() => { toast.remove(); }, 3000);
+
+        }
+
+
+
+        const lobbyContainer = document.getElementById('lobby-container');
+
+        const mainGameUI = document.getElementById('mainGameUI');
+
+        const topStatusBar = document.getElementById('topStatusBar');
+
+        const usernameInput = document.getElementById('usernameInput');
+
+        const startMatchBtn = document.getElementById('startMatchBtn');
+
+       
+
+        const hudAvatar = document.getElementById('hud-avatar');
+
+        const hudUsername = document.getElementById('hud-username');
+
+
+
+        const board = document.getElementById('game-board');
+
+        const zarBtn = document.getElementById('zarBtn');
+
+        const payJailBtn = document.getElementById('payJailBtn');
+
+        const buildMenu = document.getElementById('buildMenu');
+
+        const gameLog = document.getElementById('game-log');
+
+        const myMoneyText = document.getElementById('my-money');
+
+        const jailStatusText = document.getElementById('jail-status');
+
+        const statProperties = document.getElementById('stat-properties');
+
+        const statWorth = document.getElementById('stat-worth');
+
+        const cashAnim = document.getElementById('cashAnim');
+
+        const hudOwnedList = document.getElementById('hud-owned-list');
+
+        const leaderboardRows = document.getElementById('leaderboard-rows');
+
+        const hoverCard = document.getElementById('hoverCard');
+
+       
+
+        const myTradeMulk = document.getElementById('myTradeMulk');
+
+        const myTradeCash = document.getElementById('myTradeCash');
+
+        const botTradeMulk = document.getElementById('botTradeMulk');
+
+        const botTradeCash = document.getElementById('botTradeCash');
+
+       
+
+        const d1 = document.getElementById('d1');
+
+        const d2 = document.getElementById('d2');
+
+
+
+        const zarEmojileri = { 1: "⚀", 2: "⚁", 3: "⚂", 4: "⚃", 5: "⚄", 6: "⚅" };
+
+
+
+        const haritaDizisi = [
+
+            { id: 0, ad: "BAŞLANGIÇ", img: "🏁", type: "special" },
+
+            { id: 1, ad: "Edirne", img: "🕌", fiyat: 100000, kira: [10000, 30000, 90000, 250000], side: 0, color: "marmara", type: "city" },
+
+            { id: 2, ad: "Tekirdağ", img: "🍇", fiyat: 120000, kira: [12000, 36000, 110000, 300000], side: 0, color: "marmara", type: "city" },
+
+            { id: 3, ad: "Çeşme Resort", img: "🏖️", fiyat: 200000, side: 0, type: "resort" },
+
+            { id: 4, ad: "ŞANS KARTLARI", img: "❓", side: 0, color: "chance", type: "special" },
+
+            { id: 5, ad: "Bursa", img: "⛷️", fiyat: 160000, kira: [16000, 50000, 150000, 400000], side: 0, color: "marmara", type: "city" },
+
+            { id: 6, ad: "Manisa", img: "🏺", fiyat: 180000, kira: [18000, 55000, 160000, 420000], side: 0, color: "ege", type: "city" },
+
+            { id: 7, ad: "İzmir", img: "🌴", fiyat: 200000, kira: [20000, 60000, 180000, 450000], side: 0, color: "ege", type: "city" },
+
+            { id: 8, ad: "KAYIP ADA", img: "🏝️", type: "special" },
+
+            { id: 9, ad: "Denizli", img: "🐓", fiyat: 220000, kira: [22000, 70000, 200000, 500000], side: 1, color: "ege", type: "city" },
+
+            { id: 10, ad: "Aydın", img: "🍇", fiyat: 240000, kira: [24000, 75000, 220000, 550000], side: 1, color: "ege", type: "city" },
+
+            { id: 11, ad: "Muğla", img: "⛵", fiyat: 260000, kira: [26000, 80000, 240000, 600000], side: 1, color: "ege", type: "city" },
+
+            { id: 12, ad: "Bodrum Resort", img: "🏰", fiyat: 200000, side: 1, type: "resort" },
+
+            { id: 13, ad: "Mersin", img: "🍊", fiyat: 280000, kira: [28000, 85000, 260000, 650000], side: 1, color: "akdeniz", type: "city" },
+
+            { id: 14, ad: "ŞANS KARTLARI", img: "❓", side: 1, color: "chance", type: "special" },
+
+            { id: 15, ad: "Antalya", img: "☀️", fiyat: 320000, kira: [32000, 95000, 300000, 750000], side: 1, color: "akdeniz", type: "city" },
+
+            { id: 16, ad: "DÜNYA TURU", img: "✈️", type: "special" },
+
+            { id: 17, ad: "Konya", img: "🕌", fiyat: 340000, kira: [34000, 100000, 320000, 800000], side: 2, color: "icanadolu", type: "city" },
+
+            { id: 18, ad: "Eskişehir", img: "🚠", fiyat: 360000, kira: [36000, 110000, 340000, 850000], side: 2, color: "icanadolu", type: "city" },
+
+            { id: 19, ad: "Ankara", img: "🏛️", fiyat: 380000, kira: [38000, 115000, 360000, 900000], side: 2, color: "icanadolu", type: "city" },
+
+            { id: 20, ad: "Alanya Resort", img: "🏖️", fiyat: 200000, side: 2, type: "resort" },
+
+            { id: 21, ad: "Samsun", img: "🐎", fiyat: 400000, kira: [40000, 120000, 380000, 1000000], side: 2, color: "karadeniz", type: "city" },
+
+            { id: 22, ad: "ŞANS KARTLARI", img: "❓", side: 2, color: "chance", type: "special" },
+
+            { id: 23, ad: "Trabzon", img: "🐟", fiyat: 450000, kira: [45000, 140000, 420000, 1250000], side: 2, color: "karadeniz", type: "city" },
+
+            { id: 24, ad: "VERGİ DAİRESİ", img: "⚖️", type: "special" },
+
+            { id: 25, ad: "Erzurum", img: "🧊", fiyat: 480000, kira: [48000, 150000, 450000, 1400000], side: 3, color: "dogu", type: "city" },
+
+            { id: 26, ad: "Malatya", img: "🍑", fiyat: 500000, kira: [50000, 160000, 480000, 1500000], side: 3, color: "dogu", type: "city" },
+
+            { id: 27, ad: "Van", img: "🐈", fiyat: 520000, kira: [52000, 165000, 500000, 1600000], side: 3, color: "dogu", type: "city" },
+
+            { id: 28, ad: "Antalya Resort", img: "☀️", fiyat: 200000, side: 3, type: "resort" },
+
+            { id: 29, ad: "Gaziantep", img: "🥙", fiyat: 550000, kira: [55000, 180000, 550000, 1800000], side: 3, color: "guneydogu", type: "city" },
+
+            { id: 30, ad: "Şanlıurfa", img: "🌶️", fiyat: 580000, kira: [58000, 190000, 580000, 1900000], side: 3, color: "guneydogu", type: "city" },
+
+            { id: 31, ad: "Diyarbakır", img: "🍉", fiyat: 600000, kira: [60000, 200000, 600000, 2000000], side: 3, color: "guneydogu", type: "city" }
+
+        ];
+
+
+
+        const gridHarita = [
+
+            0,  1,  2,  3,  4,  5,  6,  7,  8,
+
+            31, -1, -1, -1, -1, -1, -1, -1, 9,
+
+            30, -1, -1, -1, -1, -1, -1, -1, 10,
+
+            29, -1, -1, -1, -1, -1, -1, -1, 11,
+
+            28, -1, -1, -1, -1, -1, -1, -1, 12,
+
+            27, -1, -1, -1, -1, -1, -1, -1, 13,
+
+            26, -1, -1, -1, -1, -1, -1, -1, 14,
+
+            25, -1, -1, -1, -1, -1, -1, -1, 15,
+
+            24, 23, 22, 21, 20, 19, 18, 17, 16
+
+        ];
+
+
+
+        let benimKarakter = { pos: 0, money: 2000000, inJail: false, jailTurns: 0, hasJailCard: false };
+
+        let benimMulklerim = {};
+
+        let botMulkleri = { 1: 0, 9: 0, 17: 0 };
+
+        let seciLenAvatar = '/public/avatarlar/avatar1.jpg';
+
+        let oyunSüresi = 0;
+
+        let logSatirlari = ["Oyun başlatıldı..."];
+
+        let dunyaTuruModu = false;
+
+        let ciftZarSayaci = 0;
+
+        let festivaller = [];
+
+
+
+        function initParticles() {
+
+            const canvas = document.getElementById('particlesCanvas'); const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+
+            let parts = [];
+
+            for(let i=0; i<35; i++) { parts.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 2 + 1, d: Math.random() * 0.4 + 0.1 }); }
+
+            function draw() {
+
+                ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = "rgba(255, 159, 67, 0.4)"; ctx.beginPath();
+
+                parts.forEach(p => { ctx.moveTo(p.x, p.y); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true); p.y -= p.d; if(p.y < 0) p.y = canvas.height; });
+
+                ctx.fill(); requestAnimationFrame(draw);
+
+            }
+
+            draw();
+
+        }
+
+
+
+        setInterval(() => {
+
+            if(mainGameUI.style.display === 'flex') {
+
+                oyunSüresi++;
+
+                let min = Math.floor(oyunSüresi / 60).toString().padStart(2, '0');
+
+                let sec = (oyunSüresi % 60).toString().padStart(2, '0');
+
+                document.getElementById('top-sure').innerText = `${min}:${sec}`;
+
+            }
+
+        }, 1000);
+
+
+
+        function addLog(text) {
+
+            logSatirlari.unshift(text); if (logSatirlari.length > 3) logSatirlari.pop();
+
+            gameLog.innerHTML = logSatirlari.join("<br>↓<br>");
+
+        }
+
+
+
+        function triggerCashAnim(text, color) {
+
+            cashAnim.innerText = text; cashAnim.style.color = color; cashAnim.style.animation = 'none';
+
+            setTimeout(() => { cashAnim.style.animation = 'floatUp 1s ease-out forwards'; }, 10);
+
+        }
+
+
+
+        startMatchBtn.onclick = () => {
+
+            let nick = usernameInput.value.trim(); if(!nick) nick = `Oyuncu_67`;
+
+            hudAvatar.style.backgroundImage = `url('${seciLenAvatar}')`;
+
+            hudUsername.innerText = nick;
+
+            lobbyContainer.style.display = 'none'; mainGameUI.style.display = 'flex'; topStatusBar.style.display = 'flex';
+
+            haritayıUret(); piyonuCiz(); refreshTradeSelectBoxes(); ekranıYenile(); initParticles();
+
+        };
+
+
+
+        function haritayıUret() {
+
+            gridHarita.forEach(index => {
+
+                if (index !== -1) {
+
+                    const k = haritaDizisi[index];
+
+                    let cell = document.getElementById(`cell-${k.id}`);
+
+                    if(!cell) { cell = document.createElement('div'); cell.id = `cell-${k.id}`; board.appendChild(cell); }
+
+                    cell.className = `cell`;
+
+                    if(k.type === "special") cell.classList.add("special");
+
+                    if(k.type === "resort") cell.classList.add("resort");
+
+                    if(k.color) cell.classList.add(`c-${k.color}`);
+
+
+
+                    cell.innerHTML = `
+
+                        <div class="owner-ribbon" id="ribbon-${k.id}"></div>
+
+                        <div class="house-row" id="houses-${k.id}"></div>
+
+                        <div style="margin-top:2px;">${k.ad}</div>
+
+                        <div class="cell-img">${k.img}</div>
+
+                    `;
+
+                    if(k.fiyat) cell.innerHTML += `<div class="price-tag">${k.fiyat.toLocaleString()} ₺</div>`;
+
+                    cell.innerHTML += `<div class="pawn-container" id="pawn-${k.id}"></div>`;
+
+                    cell.onclick = () => hucreyeTiklandi(k.id);
+
+
+
+                    cell.onmouseenter = (e) => showHoverCard(e, k.id);
+
+                    cell.onmousemove = (e) => moveHoverCard(e);
+
+                    cell.onmouseleave = () => hoverCard.style.display = 'none';
+
+                }
+
+            });
+
+        }
+
+
+
+        function showHoverCard(e, id) {
+
+            const k = haritaDizisi[id]; if(k.type === "special") return;
+
+            document.getElementById('hc-title').innerText = k.ad;
+
+            document.getElementById('hc-price').innerText = k.fiyat.toLocaleString() + " ₺";
+
+           
+
+            let kademe = benimMulklerim[id];
+
+            let currentRent = k.type === "resort" ? 150000 : k.kira[kademe || 0];
+
+            if(festivaller.includes(id)) currentRent *= 2;
+
+
+
+            document.getElementById('hc-rent').innerText = currentRent.toLocaleString() + " ₺";
+
+            document.getElementById('hc-level').innerText = kademe !== undefined ? (k.type === "resort" ? "Tesis" : (kademe === 3 ? "Otel" : kademe + " Ev")) : "Arsa";
+
+            document.getElementById('hc-owner').innerText = benimMulklerim[id] !== undefined ? "Siz" : (botMulkleri[id] !== undefined ? "Bot_Asil" : "Yok");
+
+           
+
+            hoverCard.style.display = 'block';
+
+            if (k.type === "resort") hoverCard.style.borderTopColor = "#0d9488";
+
+            else {
+
+                if (k.color === "marmara") hoverCard.style.borderTopColor = "#e11d48";
+
+                else if (k.color === "ege") hoverCard.style.borderTopColor = "#16a34a";
+
+                else hoverCard.style.borderTopColor = "#2563eb";
+
+            }
+
+            moveHoverCard(e);
+
+        }
+
+
+
+        function moveHoverCard(e) { hoverCard.style.left = (e.pageX + 15) + 'px'; hoverCard.style.top = (e.pageY + 15) + 'px'; }
+
+       
+
+        function piyonuCiz() {
+
+            document.querySelectorAll('.pawn-container').forEach(c => c.innerHTML = '');
+
+            const container = document.getElementById(`pawn-${benimKarakter.pos}`);
+
+            if (container) {
+
+                container.innerHTML = `<div class="pawn-dot pdot-0" style="background-image: url('${seciLenAvatar}');"></div>`;
+
+            }
+
+        }
+
+
+
+        function piyonuYurut(hedefPos, callback) {
+
+            let simdiki = benimKarakter.pos;
+
+            const stepInterval = setInterval(() => {
+
+                simdiki = (simdiki + 1) % 32; benimKarakter.pos = simdiki; piyonuCiz(); playSound('dice');
+
+
+
+                if (simdiki === 0) {
+
+                    benimKarakter.money += 300000; playSound('money'); triggerCashAnim("+300.000 ₺", "#16a34a");
+
+                    showToast("💵 Başlangıç çizgisinden geçildi: +300.000 ₺"); addLog("Maaş alındı: +300.000 ₺"); ekranıYenile();
+
+                }
+
+                if (simdiki === hedefPos) { clearInterval(stepInterval); if (callback) callback(); }
+
+            }, 140);
+
+        }
+
+
+
+        function ekranıYenile() {
+
+            myMoneyText.innerText = `${benimKarakter.money.toLocaleString()} ₺`;
+
+            jailStatusText.style.display = benimKarakter.inJail ? 'block' : 'none';
+
+
+
+            let mCount = Object.keys(benimMulklerim).length;
+
+            statProperties.innerText = `🏢 ${mCount} mülk`;
+
+           
+
+            let netWorth = benimKarakter.money;
+
+            Object.keys(benimMulklerim).forEach(id => { netWorth += haritaDizisi[id].fiyat; });
+
+            statWorth.innerText = `${netWorth.toLocaleString()} ₺`;
+
+
+
+            hudOwnedList.innerHTML = '';
+
+
+
+            haritaDizisi.forEach(k => {
+
+                const ribbon = document.getElementById(`ribbon-${k.id}`);
+
+                const hRow = document.getElementById(`houses-${k.id}`);
+
+                const cell = document.getElementById(`cell-${k.id}`);
+
+                if (cell && k.type !== "special") { cell.removeAttribute('style'); }
+
+
+
+                if (ribbon && hRow) {
+
+                    const kademe = benimMulklerim[k.id];
+
+                    const botKademe = botMulkleri[k.id];
+
+
+
+                    if (kademe !== undefined) {
+
+                        ribbon.className = "owner-ribbon active"; ribbon.style.background = "#ff9f43";
+
+                        if(k.type === "city") hRow.innerText = kademe === 0 ? " Arsa" : (kademe === 3 ? "🏨" : "🏠".repeat(kademe));
+
+                       
+
+                        let badge = document.createElement('div');
+
+                        badge.className = 'city-badge'; badge.innerHTML = `<span>${k.img}</span> <span>${k.ad}</span>`;
+
+                        hudOwnedList.appendChild(badge);
+
+                    } else if (botKademe !== undefined) {
+
+                        ribbon.className = "owner-ribbon active"; ribbon.style.background = "#2563eb";
+
+                        if(k.type === "city") hRow.innerText = botKademe === 0 ? " Arsa" : (botKademe === 3 ? "🏨" : "🏠".repeat(botKademe));
+
+                    } else { ribbon.className = "owner-ribbon"; hRow.innerText = ""; }
+
+                }
+
+            });
+
+
+
+            festivaller.forEach(fId => { const fCell = document.getElementById(`cell-${fId}`); if(fCell) fCell.classList.add('festival-cell'); });
+
+
+
+            leaderboardRows.innerHTML = `
+
+                <div class="leader-row"><div><span class="leader-rank">1️⃣</span> ${hudUsername.innerText} (Siz)</div><strong>${netWorth.toLocaleString()} ₺</strong></div>
+
+                <div class="leader-row"><div><span class="leader-rank">2️⃣</span> Bot_Asil</div><strong>2.100.000 ₺</strong></div>
+
+            `;
+
+
+
+            payJailBtn.style.display = benimKarakter.inJail ? 'block' : 'none';
+
+            board.className = dunyaTuruModu ? "board flight-mode" : "board";
+
+        }
+
+
+
+        function refreshTradeSelectBoxes() {
+
+            myTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
+
+            botTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
+
+
+
+            Object.keys(benimMulklerim).forEach(id => {
+
+                myTradeMulk.innerHTML += `<option value="${id}">${haritaDizisi[id].ad}</option>`;
+
+            });
+
+            Object.keys(botMulkleri).forEach(id => {
+
+                botTradeMulk.innerHTML += `<option value="${id}">${haritaDizisi[id].ad}</option>`;
+
+            });
+
+        }
+
+
+
+        function executeRealPlayerTrade() {
+
+            let myMulkId = myTradeMulk.value;
+
+            let botMulkId = botTradeMulk.value;
+
+            let giveCash = parseInt(myTradeCash.value) || 0;
+
+            let takeCash = parseInt(botTradeCash.value) || 0;
+
+
+
+            if (giveCash > benimKarakter.money) { alert("Kasanızda teklif ettiğiniz kadar nakit para bulunmuyor!"); return; }
+
+            if (!myMulkId && giveCash === 0 && !botMulkId && takeCash === 0) { alert("Lütfen takas parametrelerini belirleyin."); return; }
+
+
+
+            let onay = confirm("Bu takas teklifini rakip oyuncuya (Bot_Asil) iletmek istiyor musunuz?");
+
+            if (onay) {
+
+                if (giveCash >= takeCash || myMulkId) {
+
+                    if (myMulkId) { delete benimMulklerim[myMulkId]; botMulkleri[myMulkId] = 0; }
+
+                    if (botMulkId) { delete botMulkleri[botMulkId]; benimMulklerim[botMulkId] = 0; }
+
+                   
+
+                    benimKarakter.money -= giveCash;
+
+                    benimKarakter.money += takeCash;
+
+
+
+                    playSound('money');
+
+                    showToast("🤝 Anlaşma Sağlandı! Takas başarıyla tamamlandı.");
+
+                    addLog("Rakip oyuncu ile mülk/para takası yapıldı.");
+
+                    refreshTradeSelectBoxes();
+
+                    ekranıYenile();
+
+                } else {
+
+                    alert("❌ Teklif Reddedildi! Rakip oyuncu bu anlaşmayı karlı bulmadı.");
+
+                }
+
+            }
+
+        }
+
+
+
+        function tetikleSansKarti() {
+
+            const kartlar = [
+
+                { t: "+100.000 ₺ Piyango Çıktı!", m: 100000, type: "plus" },
+
+                { t: "+300.000 ₺ Yatırım Bonusu!", m: 300000, type: "plus" },
+
+                { t: "-150.000 ₺ Trafik Cezası!", m: -150000, type: "minus" },
+
+                { t: "Geriye Düştünüz! Başlangıç Çizgisine Git.", type: "teleport", dest: 0 },
+
+                { t: "Lüks Tüketim Vergisi Öde: -120.000 ₺", m: -120000, type: "minus" },
+
+                { t: "Kayıp Ada Ücretsiz Çıkış Kartı Kazandınız! 🎫", type: "jailCard" },
+
+                { t: "Herkesten Para Al: +50.000 ₺", m: 50000, type: "plus" }
+
+            ];
+
+            let secilen = kartlar[Math.floor(Math.random() * kartlar.length)];
+
+            alert(`❓ ŞANS KARTI ÇEKTİNİZ:\n\n"${secilen.t}"`);
+
+
+
+            if(secilen.type === "plus") { benimKarakter.money += secilen.m; playSound('money'); triggerCashAnim(`+${secilen.m.toLocaleString()} ₺`, "#16a34a"); }
+
+            if(secilen.type === "minus") { benimKarakter.money += secilen.m; triggerCashAnim(`${secilen.m.toLocaleString()} ₺`, "#e11d48"); }
+
+            if(secilen.type === "teleport") { benimKarakter.pos = secilen.dest; piyonuCiz(); }
+
+            if(secilen.type === "jailCard") { benimKarakter.hasJailCard = true; }
+
+            ekranıYenile();
+
+        }
+
+
+
+        zarBtn.onclick = () => {
+
+            if (dunyaTuruModu) return;
+
+            zarBtn.disabled = true; buildMenu.style.display = 'none'; d1.classList.add('dice-shake'); d2.classList.add('dice-shake');
+
+           
+
+            let rollCount = 0;
+
+            const rollInterval = setInterval(() => {
+
+                d1.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1]; d2.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
+
+                playSound('dice'); rollCount++;
+
+            }, 60);
+
+
+
+            setTimeout(() => {
+
+                clearInterval(rollInterval); d1.classList.remove('dice-shake'); d2.classList.remove('dice-shake'); zarBtn.disabled = false;
+
+
+
+                const zar1 = Math.floor(Math.random() * 6) + 1; const zar2 = Math.floor(Math.random() * 6) + 1;
+
+                const toplam = zar1 + zar2; const cift = (zar1 === zar2);
+
+
+
+                d1.innerText = zarEmojileri[zar1]; d2.innerText = zarEmojileri[zar2];
+
+                addLog(`Zar Atıldı: [${toplam}]`);
+
+
+
+                if (benimKarakter.inJail) {
+
+                    if (benimKarakter.hasJailCard) {
+
+                        benimKarakter.inJail = false; benimKarakter.jailTurns = 0; benimKarakter.hasJailCard = false;
+
+                        showToast("🎫 Ücretsiz çıkış kartı kullanıldı!");
+
+                        ekranıYenile(); return;
+
+                    }
+
+                    if (cift) {
+
+                        benimKarakter.inJail = false; benimKarakter.jailTurns = 0;
+
+                        showToast("🔓 Çift zar! Kayıp Ada'dan kurtuldunuz.");
+
+                        addLog("Çift zar geldi, adadan kurtuldunuz!");
+
+                    } else {
+
+                        benimKarakter.jailTurns++; addLog(`Ada turu bekleyişi: ${benimKarakter.jailTurns}`);
+
+                        if (benimKarakter.jailTurns >= 3) {
+
+                            benimKarakter.inJail = false; benimKarakter.jailTurns = 0;
+
+                            showToast("🔓 3 tur doldu, adadan serbest kaldınız.");
+
+                        } else {
+
+                            showToast("❌ Çift gelmedi! Adadasınız.");
+
+                            ekranıYenile(); return;
+
+                        }
+
+                    }
+
+                } else {
+
+                    if (cift) {
+
+                        ciftZarSayaci++;
+
+                        if (ciftZarSayaci === 3) {
+
+                            ciftZarSayaci = 0; benimKarakter.pos = 8; benimKarakter.inJail = true;
+
+                            showToast("🚨 3 Kez Çift Zar! Kayıp Ada'ya düştünüz."); addLog("🚨 3 Çift Zar! Kayıp Ada'ya kapatıldınız.");
+
+                            piyonuCiz(); ekranıYenile(); return;
+
+                        }
+
+                    } else { ciftZarSayaci = 0; }
+
+                }
+
+
+
+                let yeniHedef = (benimKarakter.pos + toplam) % 32;
+
+                piyonuYurut(yeniHedef, () => {
+
+                    addLog(`${haritaDizisi[benimKarakter.pos].ad} konumuna varıldı.`);
+
+                    if(haritaDizisi[benimKarakter.pos].color === "chance") { tetikleSansKarti(); }
+
+                    else { aksiyonHesapla(benimKarakter.pos, cift); }
+
+                });
+
+            }, 800);
+
+        };
+
+
+
+        payJailBtn.onclick = () => {
+
+            if(benimKarakter.money >= 200000) {
+
+                benimKarakter.money -= 200000; benimKarakter.inJail = false; benimKarakter.jailTurns = 0;
+
+                payJailBtn.style.display = 'none'; playSound('money'); triggerCashAnim("-200.000 ₺", "#e11d48");
+
+                showToast("💸 200.000 ₺ nakit kefalet ödenerek adadan çıkıldı."); addLog("200.000 ₺ ödenerek adadan çıkıldı.");
+
+                ekranıYenile();
+
+            }
+
+        };
+
+
+
+        function aksiyonHesapla(pos, ciftMi) {
+
+            buildMenu.style.display = 'none';
+
+            if (pos === 8) { benimKarakter.inJail = true; showToast("🏝️ Kayıp Ada'ya mahsur kaldınız."); addLog("Kayıp Ada'ya düşüldü."); ekranıYenile(); return; }
+
+            if (pos === 16) { dunyaTuruModu = true; showToast("✈️ Dünya Turu! Işınlanmak için bir ile tıklayın."); addLog("Dünya Turu hakkı kazanıldı."); ekranıYenile(); return; }
+
+            if (pos === 24) {
+
+                let mSayi = Object.keys(benimMulklerim).length; let vergi = mSayi * 60000; benimKarakter.money -= vergi;
+
+                playSound('money'); triggerCashAnim(`-${vergi.toLocaleString()} ₺`, "#e11d48");
+
+                showToast(`⚖️ Vergi Dairesi: ${vergi.toLocaleString()} ₺ vergi kesildi.`); addLog(`${vergi.toLocaleString()} ₺ mülk vergisi ödendi.`);
+
+                ekranıYenile(); return;
+
+            }
+
+
+
+            const k = haritaDizisi[pos];
+
+            if (k && (k.type === "city" || k.type === "resort")) {
+
+                const kademe = benimMulklerim[pos];
+
+                const botSahip = botMulkleri[pos];
+
+
+
+                if (botSahip !== undefined) {
+
+                    let kiraMiktari = k.type === "resort" ? 150000 : k.kira[botSahip];
+
+                    benimKarakter.money -= kiraMiktari;
+
+                    triggerCashAnim(`-${kiraMiktari.toLocaleString()} ₺`, "#e11d48");
+
+                    showToast("💸 Rakip mülkü! Bot'a kira ödendi.");
+
+                    ekranıYenile(); return;
+
+                }
+
+               
+
+                if (kademe === undefined) {
+
+                    buildMenu.style.display = 'flex';
+
+                    const p0 = k.fiyat; const p1 = k.fiyat + Math.floor(k.fiyat * 0.5); const p2 = k.fiyat + Math.floor(k.fiyat * 1.0); const p3 = k.fiyat + Math.floor(k.fiyat * 1.5);
+
+
+
+                    document.getElementById('b-prc-0').innerText = p0.toLocaleString() + " ₺";
+
+                    document.getElementById('b-prc-1').innerText = k.type === "resort" ? "N/A" : p1.toLocaleString() + " ₺";
+
+                    document.getElementById('b-prc-2').innerText = k.type === "resort" ? "N/A" : p2.toLocaleString() + " ₺";
+
+                    document.getElementById('b-prc-3').innerText = k.type === "resort" ? "N/A" : p3.toLocaleString() + " ₺";
+
+
+
+                    document.getElementById('b-opt-0').disabled = (benimKarakter.money < p0);
+
+                    document.getElementById('b-opt-1').disabled = (k.type === "resort" || benimKarakter.money < p1);
+
+                    document.getElementById('b-opt-2').disabled = (k.type === "resort" || benimKarakter.money < p2);
+
+                    document.getElementById('b-opt-3').disabled = (k.type === "resort" || benimKarakter.money < p3);
+
+                }
+
+                else if (k.type === "city" && kademe < 3) {
+
+                    buildMenu.style.display = 'flex';
+
+                    let sonrakiKademe = kademe + 1; let maliyet = Math.floor(k.fiyat * 0.5);
+
+
+
+                    for(let i=0; i<=3; i++) { document.getElementById(`b-opt-${i}`).disabled = true; document.getElementById(`b-prc-${i}`).innerText = "-"; }
+
+                    let targetOpt = document.getElementById(`b-opt-${sonrakiKademe}`);
+
+                    let targetPrc = document.getElementById(`b-prc-${sonrakiKademe}`);
+
+                   
+
+                    if(targetOpt && targetPrc) {
+
+                        targetOpt.disabled = (benimKarakter.money < maliyet); targetPrc.innerText = maliyet.toLocaleString() + " ₺";
+
+                        if(sonrakiKademe === 1) targetOpt.innerHTML = "<span>🏠 1. Evi Kur</span>" + ` <span id="b-prc-1">${maliyet.toLocaleString()} ₺</span>`;
+
+                        if(sonrakiKademe === 2) targetOpt.innerHTML = "<span>🏠🏠 2. Evi Kur</span>" + ` <span id="b-prc-2">${maliyet.toLocaleString()} ₺</span>`;
+
+                        if(sonrakiKademe === 3) targetOpt.innerHTML = "<span>🏨 Otele Yükselt!</span>" + ` <span id="b-prc-3">${maliyet.toLocaleString()} ₺</span>`;
+
+                    }
+
+                }
+
+            } else { if(ciftMi) addLog("Çift attığınız için bir hak daha!"); }
+
+            ekranıYenile();
+
+        }
+
+
+
+        function buyMulkLevel(targetKademe) {
+
+            const pos = benimKarakter.pos; const k = haritaDizisi[pos]; const mevcutKademe = benimMulklerim[pos];
+
+
+
+            if (mevcutKademe === undefined) {
+
+                let maliyet = k.fiyat; if(targetKademe > 0) maliyet += Math.floor(k.fiyat * (targetKademe * 0.5));
+
+                benimKarakter.money -= maliyet; benimMulklerim[pos] = targetKademe;
+
+                playSound('money'); if(targetKademe === 3) playSound('build');
+
+                triggerCashAnim(`-${maliyet.toLocaleString()} ₺`, "#e11d48");
+
+                showToast(`🏢 ${k.ad} düzey [${targetKademe}] olarak kuruldu!`); addLog(`${k.ad} satın alındı.`);
+
+            } else {
+
+                let maliyet = Math.floor(k.fiyat * 0.5); benimKarakter.money -= maliyet; benimMulklerim[pos] = targetKademe;
+
+                playSound('build'); triggerCashAnim(`-${maliyet.toLocaleString()} ₺`, "#e11d48");
+
+                showToast(`🏨 ${k.ad} mülkü yeni düzeye yükseltildi!`); addLog(`${k.ad} ev seviyesi yükseltildi.`);
+
+            }
+
+            buildMenu.style.display = 'none'; refreshTradeSelectBoxes();
+
+            let resortlar = [3, 12, 20, 28].filter(id => benimMulklerim[id] !== undefined).length;
+
+            if(resortlar === 4) alert("🏆 TEBRİKLER! Tüm tesisleri toplayarak kazandınız!");
+
+            ekranıYenile();
+
+        }
+
+
+
+        function hucreyeTiklandi(targetId) {
+
+            const k = haritaDizisi[targetId];
+
+            if (dunyaTuruModu) {
+
+                if (k.type === "special") return;
+
+                benimKarakter.pos = targetId; dunyaTuruModu = false; piyonuCiz();
+
+                showToast(`✈️ Uçuş moduyla ${k.ad} iline inildi.`); addLog(`Uçuş yapıldı: ${k.ad}`);
+
+                aksiyonHesapla(targetId, false); return;
+
+            }
+
+        }
+
+
+
+        function selectAvatar(element, imgPath) {
+
+            document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+
+            element.classList.add('selected');
+
+            seciLenAvatar = imgPath;
+
+        }
+
+
+
+        function mulkPasGec() { addLog("Mülk pas geçildi."); buildMenu.style.display = 'none'; ekranıYenile(); }
+
+    </script>
+
+</body>
+
+</html> 
