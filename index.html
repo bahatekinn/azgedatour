@@ -1359,11 +1359,74 @@ socket.on('mesaj-al', (data) => {
 
 
         zarBtn.onclick = () => {
+    if (dunyaTuruModu) return;
+    
+    // YEREL HESAPLAMA YAPMA, SUNUCUDAN İSTE
+    socket.emit('zar-at'); 
+    
+    zarBtn.disabled = true;
+    d1.classList.add('dice-shake'); 
+    d2.classList.add('dice-shake');
 
-            if (dunyaTuruModu) return;
+    // Zar sallanma efektini çalıştır (ama sonuç sunucudan gelecek)
+    let rollCount = 0;
+    const rollInterval = setInterval(() => {
+        d1.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
+        d2.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
+        playSound('dice');
+        rollCount++;
+    }, 60);
 
-            zarBtn.disabled = true; buildMenu.style.display = 'none'; d1.classList.add('dice-shake'); d2.classList.add('dice-shake');
+    // 800ms sonra sallanmayı durduracağız ama sonucu sunucudan bekleyeceğiz
+    setTimeout(() => { clearInterval(rollInterval); }, 800);
+};
 
+// SUNUCUDAN GELEN SONUCU HERKESİN EKRANINDA GÖSTER
+socket.on('zar-sonucu', (data) => {
+    d1.classList.remove('dice-shake'); 
+    d2.classList.remove('dice-shake'); 
+    zarBtn.disabled = false;
+
+    // Gelen zar sonuçlarını yerleştir
+    d1.innerText = zarEmojileri[data.zar1];
+    d2.innerText = zarEmojileri[data.zar2];
+    addLog(`Zar Atıldı: [${data.deger}]`);
+
+    // OYUN MANTIĞINI BURAYA TAŞIDIK
+    if (benimKarakter.inJail) {
+        if (benimKarakter.hasJailCard) {
+            benimKarakter.inJail = false; benimKarakter.jailTurns = 0; benimKarakter.hasJailCard = false;
+            showToast("🎫 Ücretsiz çıkış kartı kullanıldı!"); ekranıYenile(); return;
+        }
+        if (data.cift) {
+            benimKarakter.inJail = false; benimKarakter.jailTurns = 0;
+            showToast("🔓 Çift zar! Kayıp Ada'dan kurtuldunuz.");
+        } else {
+            benimKarakter.jailTurns++;
+            if (benimKarakter.jailTurns >= 3) {
+                benimKarakter.inJail = false; benimKarakter.jailTurns = 0;
+                showToast("🔓 3 tur doldu, adadan serbest kaldınız.");
+            } else {
+                showToast("❌ Çift gelmedi! Adadasınız."); ekranıYenile(); return;
+            }
+        }
+    } else {
+        if (data.cift) {
+            ciftZarSayaci++;
+            if (ciftZarSayaci === 3) {
+                ciftZarSayaci = 0; benimKarakter.pos = 8; benimKarakter.inJail = true;
+                showToast("🚨 3 Kez Çift Zar! Kayıp Ada'ya düştünüz.");
+                piyonuCiz(); ekranıYenile(); return;
+            }
+        } else { ciftZarSayaci = 0; }
+    }
+    let yeniHedef = (benimKarakter.pos + data.deger) % 32;
+    piyonuYurut(yeniHedef, () => {
+        addLog(`${haritaDizisi[benimKarakter.pos].ad} konumuna varıldı.`);
+        if(haritaDizisi[benimKarakter.pos].color === "chance") { tetikleSansKarti(); }
+        else { aksiyonHesapla(benimKarakter.pos, data.cift); }
+    });
+});
            
 
             let rollCount = 0;
@@ -1472,7 +1535,7 @@ socket.on('mesaj-al', (data) => {
 
             }, 800);
 
-        };
+        ;
 
 
 
