@@ -969,20 +969,28 @@ socket.on('mesaj-al', (data) => {
 
 
 
-        startMatchBtn.onclick = () => {
+       startMatchBtn.onclick = () => {
+    let nick = usernameInput.value.trim();
+    let odaKodu = document.getElementById('roomInput').value.trim(); // Oda kodunu okuyoruz
+    
+    if(!nick) nick = `Oyuncu_${Math.floor(Math.random()*100)}`;
+    if(!odaKodu) odaKodu = "genel"; // Kod girilmezse genel odaya atar
 
-            let nick = usernameInput.value.trim(); if(!nick) nick = `Oyuncu_67`;
+    // ODA KODUNU SUNUCUYA İLETİYORUZ
+    socket.emit('oda-degis', odaKodu);
 
-            hudAvatar.style.backgroundImage = `url('${seciLenAvatar}')`;
-
-            hudUsername.innerText = nick;
-
-            lobbyContainer.style.display = 'none'; mainGameUI.style.display = 'flex'; topStatusBar.style.display = 'flex';
-
-            haritayıUret(); piyonuCiz(); refreshTradeSelectBoxes(); ekranıYenile(); initParticles();
-
-        };
-
+    hudAvatar.style.backgroundImage = `url('${seciLenAvatar}')`;
+    hudUsername.innerText = nick;
+    lobbyContainer.style.display = 'none'; 
+    mainGameUI.style.display = 'flex'; 
+    topStatusBar.style.display = 'flex';
+    
+    haritayıUret(); 
+    piyonuCiz(); 
+    refreshTradeSelectBoxes(); 
+    ekranıYenile(); 
+    initParticles();
+};
 
 
         function haritayıUret() {
