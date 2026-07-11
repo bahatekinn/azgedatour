@@ -1689,7 +1689,7 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
 
         function mulkPasGec() { addLog("Mülk pas geçildi."); buildMenu.style.display = 'none'; ekranıYenile(); }
 
-    </script>
+
     // ZAR ATMA VE SONUÇ İŞLEMLERİ
 zarBtn.onclick = () => {
     if (dunyaTuruModu) return;
@@ -1744,6 +1744,7 @@ socket.on('zar-sonucu', (data) => {
         else { aksiyonHesapla(benimKarakter.pos, data.cift); }
     });
 });
+</script>
 
 
 </body>
