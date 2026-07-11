@@ -645,13 +645,20 @@ S
             document.getElementById('muteBtn').innerText = isMuted ? "Sesi Aç 🔇" : "Sesi Kapat 🔊";
 
         }
-        function mesajGonder() {
+       function mesajGonder() {
     const input = document.getElementById('chatInput');
+    const isim = hudUsername.innerText; // Oyuncunun ismini alıyoruz
     if(input.value.trim() !== "") {
-        socket.emit('mesaj-yolla', input.value);
+        socket.emit('mesaj-yolla', { isim: isim, mesaj: input.value });
         input.value = '';
     }
 }
+
+socket.on('mesaj-al', (data) => {
+    const div = document.getElementById('messages');
+    div.innerHTML += `<div><b>${data.isim}:</b> ${data.mesaj}</div>`;
+});
+    
 
 socket.on('mesaj-al', (msg) => {
     const div = document.getElementById('messages');
@@ -882,7 +889,7 @@ socket.on('mesaj-al', (msg) => {
 
         let benimMulklerim = {};
 
-        let botMulkleri = { 1: 0, 9: 0, 17: 0 };
+        let botMulkleri = {};
 
         let seciLenAvatar = '/public/avatarlar/avatar1.jpg';
 
@@ -1204,13 +1211,12 @@ socket.on('mesaj-al', (msg) => {
 
 
 
-            leaderboardRows.innerHTML = `
-
-                <div class="leader-row"><div><span class="leader-rank">1️⃣</span> ${hudUsername.innerText} (Siz)</div><strong>${netWorth.toLocaleString()} ₺</strong></div>
-
-                <div class="leader-row"><div><span class="leader-rank">2️⃣</span> Bot_Asil</div><strong>2.100.000 ₺</strong></div>
-
-            `;
+          leaderboardRows.innerHTML = `
+    <div class="leader-row">
+        <div><span class="leader-rank">1️⃣</span> ${hudUsername.innerText} (Siz)</div>
+        <strong>${netWorth.toLocaleString()} ₺</strong>
+    </div>
+`;
 
 
 
