@@ -16,28 +16,32 @@ while(festivaller.length < 3) {
     if(!festivaller.includes(rastgele)) festivaller.push(rastgele);
 }
 
-// Herkesi aynı odaya sokmak için oda ismi
-const ANA_ODA = "azgeda-lobi";
-
 io.on('connection', (socket) => {
     console.log('Bir oyuncu bağlandı! ID:', socket.id);
     
-    // Bağlanan herkesi otomatik olarak ana odaya dahil et
-    socket.join(ANA_ODA);
-
-    // Bağlanan oyuncuya festivalleri gönder
-    socket.emit('festival-bilgisi', festivaller);
-
-    // SOHBET ÖZELLİĞİ
-    socket.on('mesaj-yolla', (msg) => {
-        io.to(ANA_ODA).emit('mesaj-al', msg);
+    // OYUNCU ODA KODUNU GÖNDERİNCE ÇALIŞACAK
+    socket.on('oda-degis', (yeniOda) => {
+        socket.join(yeniOda);
+        socket.currentRoom = yeniOda; // Hangi odada olduğunu kaydettik
+        
+        // Bağlanan oyuncuya festivalleri gönder
+        socket.emit('festival-bilgisi', festivaller);
     });
 
+    // SOHBET (Artık odaya özel)
+   // Örnek olarak mesaj-yolla kısmını güvenli hale getirelim:
+socket.on('mesaj-yolla', (data) => {
+    if (socket.currentRoom) {
+        io.to(socket.currentRoom).emit('mesaj-al', data);
+    }
+});
+
+    // ZAR (Artık odaya özel)
     socket.on('zar-at', () => {
         const zar1 = Math.floor(Math.random() * 6) + 1;
         const zar2 = Math.floor(Math.random() * 6) + 1;
         
-        io.to(ANA_ODA).emit('zar-sonucu', { 
+        io.to(socket.currentRoom).emit('zar-sonucu', { 
             oyuncuId: socket.id, 
             deger: zar1 + zar2, 
             zar1: zar1, 
@@ -47,15 +51,15 @@ io.on('connection', (socket) => {
     });
 
     socket.on('mulk-islem', (data) => {
-        socket.to(ANA_ODA).emit('mulk-islem-bilgisi', data);
+        socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data);
     });
 
     socket.on('uctu', (data) => {
-        socket.to(ANA_ODA).emit('uctu-bilgisi', data);
+        socket.to(socket.currentRoom).emit('uctu-bilgisi', data);
     });
 
     socket.on('para-guncelle', (data) => {
-        socket.to(ANA_ODA).emit('para-guncelle-bilgisi', data);
+        socket.to(socket.currentRoom).emit('para-guncelle-bilgisi', data);
     });
 });
 

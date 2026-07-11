@@ -411,6 +411,12 @@
             <input type="text" id="usernameInput" placeholder="Adınızı yazın...">
 
         </div>
+        <div class="input-group">
+        <label for="roomInput">Oda Kodu</label>
+        <input type="text" id="roomInput" placeholder="Örn: 123">
+    </div>
+    ...
+</div>
 
         <div class="input-group">
 
@@ -659,12 +665,6 @@ socket.on('mesaj-al', (data) => {
     div.innerHTML += `<div><b>${data.isim}:</b> ${data.mesaj}</div>`;
 });
     
-
-socket.on('mesaj-al', (msg) => {
-    const div = document.getElementById('messages');
-    div.innerHTML += `<div>Arkadaş: ${msg}</div>`;
-});
-
 
 
         function playSound(type) {
