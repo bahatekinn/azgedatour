@@ -1374,7 +1374,7 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
 
 
 
-        zarBtn.onclick = () => {
+       zarBtn.addEventListener('click', () => {
     if (dunyaTuruModu) return;
     
     // YEREL HESAPLAMA YAPMA, SUNUCUDAN İSTE
@@ -1385,8 +1385,8 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
     d2.classList.add('dice-shake');
 
     // Zar sallanma efektini çalıştır (ama sonuç sunucudan gelecek)
-    let rollCount = 0;
-    const rollInterval = setInterval(() => {
+    rollCount = 0;
+     rollInterval = setInterval(() => {
         d1.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
         d2.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
         playSound('dice');
@@ -1395,7 +1395,7 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
 
     // 800ms sonra sallanmayı durduracağız ama sonucu sunucudan bekleyeceğiz
     setTimeout(() => { clearInterval(rollInterval); }, 800);
-};
+
 
 // SUNUCUDAN GELEN SONUCU HERKESİN EKRANINDA GÖSTER
 socket.on('zar-sonucu', (data) => {
@@ -1760,9 +1760,10 @@ socket.on('zar-sonucu', (data) => {
 
 
         function mulkPasGec() { addLog("Mülk pas geçildi."); buildMenu.style.display = 'none'; ekranıYenile(); }
-
+})
     </script>
+
 
 </body>
 
-</html> 
+</html>
