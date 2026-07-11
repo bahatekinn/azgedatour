@@ -1137,25 +1137,23 @@ function piyonuCiz(tumOyuncular) {
 
 function piyonuYurut(oyuncuId, hedefPos, callback) {
     let oyuncu = tumOyuncularListesi.find(o => o.id === oyuncuId);
-    if (!oyuncu) { console.error("Oyuncu bulunamadı:", oyuncuId); return; }
+    if (!oyuncu) return;
 
-    // Eğer hedef zaten aynıysa hareket etme
-    if (oyuncu.pos === hedefPos) { if (callback) callback(); return; }
+    // Hareketi başlatmadan önce mevcut interval'i temizle (çift tetiklenmeyi engeller)
+    if (window.moveInterval) clearInterval(window.moveInterval);
 
-    const stepInterval = setInterval(() => {
-        // Piyonun bir sonraki kareye geçişi
-        oyuncu.pos = (oyuncu.pos + 1) % 32; 
+    window.moveInterval = setInterval(() => {
+        if (oyuncu.pos === hedefPos) {
+            clearInterval(window.moveInterval);
+            if (callback) callback();
+            return;
+        }
         
+        oyuncu.pos = (oyuncu.pos + 1) % 32;
         piyonuCiz(tumOyuncularListesi);
         playSound('dice');
-
-        if (oyuncu.pos === hedefPos) {
-            clearInterval(stepInterval);
-            if (callback) callback();
-        }
-    }, 400); // Hızı burada ayarlıyoruz (350-400ms idealdir)
+    }, 500); // 500ms ile çok net kare kare yürür
 }
-
 
         function ekranıYenile() {
 
