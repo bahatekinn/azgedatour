@@ -1124,36 +1124,36 @@ socket.emit('yeni-oyuncu-katildi', {
 function piyonuCiz(tumOyuncular) {
     document.querySelectorAll('.pawn-container').forEach(c => c.innerHTML = '');
 
-    // tumOyuncular listesindeki her oyuncu için tahtaya bir dot ekle
     tumOyuncular.forEach(oyuncu => {
         const container = document.getElementById(`pawn-${oyuncu.pos}`);
         if (container) {
-            container.innerHTML += `<div class="pawn-dot" style="background-image: url('${oyuncu.avatar}'); border-color: ${oyuncu.id === socket.id ? '#ff9f43' : '#fff'};"></div>`;
+            // Arka plan resmini (avatar) burada set ediyoruz
+            container.innerHTML += `
+                <div class="pawn-dot" style="background-image: url('${oyuncu.avatar}'); border: 2px solid ${oyuncu.id === socket.id ? '#ff9f43' : '#fff'};">
+                </div>`;
         }
     });
 }
 
-
-// PiyonuYurut'u şöyle güncelle:
 function piyonuYurut(oyuncuId, hedefPos, callback) {
-    // Sadece bu oyuncunun pozisyonunu sunucudan gelen ID ile bulup güncelliyoruz
-    // (Bunun için oyuncu listesini tutan global bir değişkenin olmalı)
-    
     let oyuncu = tumOyuncularListesi.find(o => o.id === oyuncuId);
-    let simdiki = oyuncu.pos; 
+    if (!oyuncu) { console.error("Oyuncu bulunamadı:", oyuncuId); return; }
+
+    // Eğer hedef zaten aynıysa hareket etme
+    if (oyuncu.pos === hedefPos) { if (callback) callback(); return; }
 
     const stepInterval = setInterval(() => {
-        simdiki = (simdiki + 1) % 32;
-        oyuncu.pos = simdiki; // Sadece o oyuncunun pos'unu güncelle
+        // Piyonun bir sonraki kareye geçişi
+        oyuncu.pos = (oyuncu.pos + 1) % 32; 
         
-        piyonuCiz(tumOyuncularListesi); // Listeyi tekrar çiz
+        piyonuCiz(tumOyuncularListesi);
         playSound('dice');
 
-        if (simdiki === hedefPos) {
+        if (oyuncu.pos === hedefPos) {
             clearInterval(stepInterval);
             if (callback) callback();
         }
-    }, 350);
+    }, 400); // Hızı burada ayarlıyoruz (350-400ms idealdir)
 }
 
 
