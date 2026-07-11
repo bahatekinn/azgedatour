@@ -9,6 +9,9 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
+// Hangi odada hangi oyuncular var onu tutalım
+let odadakiOyuncular = {}; 
+
 const mulkKareleri = [1,2,4,5,6,7,9,10,11,13,14,15,17,18,19,21,22,23,25,26,27,29,30,31];
 let festivaller = [];
 while(festivaller.length < 3) {
@@ -19,13 +22,25 @@ while(festivaller.length < 3) {
 io.on('connection', (socket) => {
     console.log('Bir oyuncu bağlandı! ID:', socket.id);
     
-    // OYUNCU ODA KODUNU GÖNDERİNCE ÇALIŞACAK
+    // ODA KODU VE OYUNCU BİLGİSİ
     socket.on('oda-degis', (yeniOda) => {
         socket.join(yeniOda);
         socket.currentRoom = yeniOda; 
-        
-        // Bağlanan oyuncuya festivalleri gönder
         socket.emit('festival-bilgisi', festivaller);
+    });
+
+    // YENİ OYUNCU KATILDIĞINDA (Bunu index.html'den çağırman lazım)
+    socket.on('yeni-oyuncu-katildi', (data) => {
+        if (!odadakiOyuncular[socket.currentRoom]) odadakiOyuncular[socket.currentRoom] = [];
+        
+        let oyuncuBilgisi = { id: socket.id, nick: data.nick, avatar: data.avatar };
+        odadakiOyuncular[socket.currentRoom].push(oyuncuBilgisi);
+        
+        // Diğerlerine yeni oyuncuyu haber ver
+        socket.to(socket.currentRoom).emit('oyuncu-listesini-guncelle', oyuncuBilgisi);
+        
+        // Yeni gelene de odadakileri gönder
+        socket.emit('mevcut-oyuncular', odadakiOyuncular[socket.currentRoom]);
     });
 
     // SOHBET
@@ -51,25 +66,15 @@ io.on('connection', (socket) => {
         }
     });
 
-    // MÜLK İŞLEMLERİ
-    socket.on('mulk-islem', (data) => {
-        if (socket.currentRoom) {
-            socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data);
-        }
-    });
+    // MÜLK, UÇUŞ VE PARA (Diğerleri aynı)
+    socket.on('mulk-islem', (data) => { socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data); });
+    socket.on('uctu', (data) => { socket.to(socket.currentRoom).emit('uctu-bilgisi', data); });
+    socket.on('para-guncelle', (data) => { socket.to(socket.currentRoom).emit('para-guncelle-bilgisi', data); });
 
-    // UÇUŞ (DÜNYA TURU)
-    socket.on('uctu', (data) => {
-        if (socket.currentRoom) {
-            socket.to(socket.currentRoom).emit('uctu-bilgisi', data);
-        }
-    });
-
-    // PARA GÜNCELLEME
-    socket.on('para-guncelle', (data) => {
-        if (socket.currentRoom) {
-            socket.to(socket.currentRoom).emit('para-guncelle-bilgisi', data);
-        }
+    // Çıkış yapınca listeden sil
+    socket.on('disconnect', () => {
+        console.log('Oyuncu ayrıldı:', socket.id);
+        // İstersen burada odadakiOyuncular listesinden de silebilirsin
     });
 });
 
