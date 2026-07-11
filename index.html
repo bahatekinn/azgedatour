@@ -634,13 +634,14 @@
 
 
     <script src="/socket.io/socket.io.js"></script>
-S
+
     <script>
         const socket = io();
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         let isMuted = false;
+        let tumOyuncularListesi = [];
 
 
 
@@ -1119,46 +1120,41 @@ socket.emit('yeni-oyuncu-katildi', {
 
        
 
-        function piyonuCiz() {
+     // Eski piyonuCiz fonksiyonunu sil ve bunu koy
+function piyonuCiz(tumOyuncular) {
+    document.querySelectorAll('.pawn-container').forEach(c => c.innerHTML = '');
 
-            document.querySelectorAll('.pawn-container').forEach(c => c.innerHTML = '');
-
-            const container = document.getElementById(`pawn-${benimKarakter.pos}`);
-
-            if (container) {
-
-                container.innerHTML = `<div class="pawn-dot pdot-0" style="background-image: url('${seciLenAvatar}');"></div>`;
-
-            }
-
+    // tumOyuncular listesindeki her oyuncu için tahtaya bir dot ekle
+    tumOyuncular.forEach(oyuncu => {
+        const container = document.getElementById(`pawn-${oyuncu.pos}`);
+        if (container) {
+            container.innerHTML += `<div class="pawn-dot" style="background-image: url('${oyuncu.avatar}'); border-color: ${oyuncu.id === socket.id ? '#ff9f43' : '#fff'};"></div>`;
         }
+    });
+}
 
 
+// PiyonuYurut'u şöyle güncelle:
+function piyonuYurut(oyuncuId, hedefPos, callback) {
+    // Sadece bu oyuncunun pozisyonunu sunucudan gelen ID ile bulup güncelliyoruz
+    // (Bunun için oyuncu listesini tutan global bir değişkenin olmalı)
+    
+    let oyuncu = tumOyuncularListesi.find(o => o.id === oyuncuId);
+    let simdiki = oyuncu.pos; 
 
-        function piyonuYurut(hedefPos, callback) {
+    const stepInterval = setInterval(() => {
+        simdiki = (simdiki + 1) % 32;
+        oyuncu.pos = simdiki; // Sadece o oyuncunun pos'unu güncelle
+        
+        piyonuCiz(tumOyuncularListesi); // Listeyi tekrar çiz
+        playSound('dice');
 
-            let simdiki = benimKarakter.pos;
-
-            const stepInterval = setInterval(() => {
-
-                simdiki = (simdiki + 1) % 32; benimKarakter.pos = simdiki; piyonuCiz(); playSound('dice');
-
-
-
-                if (simdiki === 0) {
-
-                    benimKarakter.money += 300000; playSound('money'); triggerCashAnim("+300.000 ₺", "#16a34a");
-
-                    showToast("💵 Başlangıç çizgisinden geçildi: +300.000 ₺"); addLog("Maaş alındı: +300.000 ₺"); ekranıYenile();
-
-                }
-
-                if (simdiki === hedefPos) { clearInterval(stepInterval); if (callback) callback(); }
-
-            }, 140);
-
+        if (simdiki === hedefPos) {
+            clearInterval(stepInterval);
+            if (callback) callback();
         }
-
+    }, 140);
+}S
 
 
         function ekranıYenile() {
