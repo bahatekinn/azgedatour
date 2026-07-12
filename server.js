@@ -266,7 +266,7 @@ socket.on('piyon-hareket-etti', (data) => {
 
     // ZAR (Sıra tabanlı ve Ağırlıklandırılmış Özel Zar Olasılığı)
 
-    socket.on('zar-at', () => {
+   socket.on('zar-at', () => {
         const oda = socket.currentRoom;
         if (oda && odadakiOyuncular[oda]) {
             // GÜVENLİK KONTROLÜ: 
@@ -300,7 +300,7 @@ socket.on('piyon-hareket-etti', (data) => {
                 cift: cift
             });
 
-            // Eğer çift zar GEKMEDİYSE piyon yürüme animasyonundan sonra sırayı devret
+            // Eğer çift zar gelmediyse, süre sonunda sırayı değiştir
             if (!cift) {
                 setTimeout(() => {
                     sirayiDegistir(oda);
@@ -313,54 +313,6 @@ socket.on('piyon-hareket-etti', (data) => {
             }
         }
     });
-
-            // Havuzun içerisinden tamamen rastgele birer sayı seçtiriyoruz
-
-            const zar1 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
-
-            const zar2 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
-
-            const cift = (zar1 === zar2);
-
-           
-
-            io.to(oda).emit('zar-sonucu', {
-
-                oyuncuId: socket.id,
-
-                deger: zar1 + zar2,
-
-                zar1: zar1,
-
-                zar2: zar2,
-
-                cift: cift
-
-            });
-
-
-
-            // Eğer çift zar GEKMEDİYSE piyon yürüme animasyonundan sonra (yaklaşık 2.5 saniye) sırayı devret
-
-            if (!cift) {
-
-                setTimeout(() => {
-
-                    sirayiDegistir(oda);
-
-                }, 2500);
-
-            } else {
-
-                // Çift zar geldiyse oyuncunun aynı tur içinde tekrar zar atabilmesi için kilidi aç
-
-                odadakiOyuncular[oda].zarAttiMi = false;
-
-            }
-
-        }
-
-    );
 
 
 
@@ -455,11 +407,14 @@ socket.on('piyon-hareket-etti', (data) => {
 
 // Render veya yerel port için dinamik port kontrolü
 
+socket.on('disconnect', () => {
+        // ... (kodların)
+        odayiGuncelle(oda); 
+    });
+}); // <--- BU PARANTEZ EKSİKTİ! Bu, 90. satırdaki 'io.on'u kapatır.
+
+// Render veya yerel port için dinamik port kontrolü
 const PORT = process.env.PORT || 3000;
-
 http.listen(PORT, () => {
-
     console.log(`Azgeda Tour ${PORT} portunda başarıyla çalışıyor!`);
-
-});  
-
+});
