@@ -382,8 +382,7 @@
 
             background-color: #0c0e14;
 
-            background-image: url('/public/avatarlar/turkiye-harita.png'); 
-
+            background-image: url('./public/avatarlar/turkiye-harita.png');
             
 
             /* BURASI ÇOK ÖNEMLİ: Harita alanı kapsasın ama butonları itmesin */
@@ -2113,7 +2112,6 @@ const haritaDizisi = [
 
 
 
-
 startMatchBtn.onclick = () => {
     let nick = usernameInput.value.trim();
     let odaKodu = document.getElementById('roomInput').value.trim(); 
@@ -2121,29 +2119,35 @@ startMatchBtn.onclick = () => {
     if(!nick) nick = `Oyuncu_${Math.floor(Math.random()*100)}`;
     if(!odaKodu) odaKodu = "genel"; 
 
-    // --- BURAYI DEĞİŞTİRİYORUZ (Arayüzü en başa al) ---
+    // Arayüzü değiştir
     lobbyContainer.style.display = 'none'; 
     mainGameUI.style.display = 'flex'; 
     topStatusBar.style.display = 'flex';
-    // --------------------------------------------------
 
-    // ÖNCE ODA DEĞİŞTİR, SONRA KATIL (Senkronizasyon için çok önemli)
+    // Oda ve oyuncu bilgilerini gönder
     socket.emit('oda-degis', odaKodu);
     socket.emit('yeni-oyuncu-katildi', {
         nick: nick, 
-       avatar: window.OYUN_DATA.secilenAvatar
+        avatar: window.OYUN_DATA.secilenAvatar
     });
     
-   hudAvatar.style.backgroundImage = `url('${window.OYUN_DATA.secilenAvatar}')`;
-    hudUsername.innerText = nick;
+    // HUD kısmını güvenli güncelle
+    const hudAvatar = document.getElementById('hud-avatar');
+    const hudUsername = document.getElementById('hud-username');
+    if(hudAvatar) hudAvatar.style.backgroundImage = `url('${window.OYUN_DATA.secilenAvatar}')`;
+    if(hudUsername) hudUsername.innerText = nick;
     
+    // Haritayı çiz, piyonları bir milisaniye sonra yükle
     haritayıUret(); 
-    piyonuCiz(); 
-    refreshTradeSelectBoxes(); 
-    ekranıYenile(); 
     initParticles();
-};
+    ekranıYenile(); 
+    refreshTradeSelectBoxes();
 
+    // Hata almamak için boş bir liste ile başlat
+    setTimeout(() => {
+        piyonuCiz(tumOyuncularListesi);
+    }, 100);
+};
 
 
 
