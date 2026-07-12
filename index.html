@@ -2335,9 +2335,10 @@ function piyonuCiz(tumOyuncular) {
     // Tüm piyon kutularını temizle
     document.querySelectorAll('.pawn-container').forEach(c => c.innerHTML = '');
 
+    // Gelen parametreyi veya global listeyi kullan
     let list = tumOyuncular || tumOyuncularListesi;
     
-    // Eğer liste yoksa kendi karakterini ekle
+    // Eğer liste boşsa, sadece yerel oyuncuyu ekle
     if (!list || list.length === 0) {
         list = [{
             id: socket.id || 'local',
@@ -2346,11 +2347,13 @@ function piyonuCiz(tumOyuncular) {
         }];
     }
 
+    // Piyonları tahtaya çiz
     list.forEach(oyuncu => {
         const container = document.getElementById(`pawn-${oyuncu.pos}`);
         if (container) {
             container.innerHTML += `
-                <div class="pawn-dot" style="background-image: url('${oyuncu.avatar}'); border: 2px solid ${oyuncu.id === socket.id ? '#ff9f43' : '#fff'}; width: 22px; height: 22px;"></div>
+                <div class="pawn-dot" style="background-image: url('${oyuncu.avatar}'); border: 2px solid ${oyuncu.id === socket.id ? '#ff9f43' : '#fff'}; width: 22px; height: 22px;">
+                </div>
             `;
         }
     });
@@ -2359,36 +2362,7 @@ function piyonuCiz(tumOyuncular) {
 
 
 
-            list.forEach(oyuncu => {
-
-
-
-                const container = document.getElementById(`pawn-${oyuncu.pos}`);
-
-
-
-                if (container) {
-
-
-
-                    container.innerHTML += `
-
-
-
-                        <div class="pawn-dot" style="background-image: url('${oyuncu.avatar}'); border: 2px solid ${oyuncu.id === socket.id ? '#ff9f43' : '#fff'}; width: 22px; height: 22px;">
-
-
-
-                        </div>`;
-
-
-
-                }
-
-
-
-            });
-
+           
 
 
         
