@@ -1940,7 +1940,8 @@ const haritaDizisi = [
 
         let benimKarakter = { pos: 0, money: 2000000, inJail: false, jailTurns: 0, hasJailCard: false };
 
-        let benimMulklerim = {};
+      
+        window.benimMulklerim = {};
 
         let botMulkleri = {};
 
@@ -3029,27 +3030,24 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
             });
         }
 
-       
- function refreshTradeSelectBoxes() {
+function refreshTradeSelectBoxes() {
     const myTradeMulk = document.getElementById('myTradeMulk');
     const botTradeMulk = document.getElementById('botTradeMulk');
 
-    // Eğer DOM'da kutular yoksa, daha oyun başlamamıştır, hata vermeden çık
     if (!myTradeMulk || !botTradeMulk) return;
 
     myTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
     botTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
 
-    // Eğer mülk listesi değişkeni tanımlıysa ve içi doluysa doldur
-    if (typeof benimMulklerim !== 'undefined' && benimMulklerim && Object.keys(benimMulklerim).length > 0) {
-        Object.keys(benimMulklerim).forEach(id => {
+    // window üzerinden erişiyoruz
+    if (window.benimMulklerim && Object.keys(window.benimMulklerim).length > 0) {
+        Object.keys(window.benimMulklerim).forEach(id => {
             if (haritaDizisi[id]) {
                 myTradeMulk.innerHTML += `<option value="${id}">${haritaDizisi[id].ad}</option>`;
             }
         });
     }
 
-    // Seçilen rakip oyuncunun mülklerini bulma kısmı
     const targetPlayerId = document.getElementById('tradeTargetPlayer') ? document.getElementById('tradeTargetPlayer').value : '';
     if (targetPlayerId) {
         haritaDizisi.forEach(kare => {
