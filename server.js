@@ -33,27 +33,23 @@ function sirayiDegistir(odaKodu) {
     let nextIndex = (currentIndex + 1) % oda.length;
     
     oda.aktifSiraId = oda[nextIndex].id;
-    oda.zarAttiMi = false; 
+    oda.zarAttiMi = false;
 
     io.to(odaKodu).emit('sira-guncelle', { aktifSiraId: oda.aktifSiraId });
 }
 
 io.on('connection', (socket) => {
-    console.log('Bir oyuncu bağlandı! ID:', socket.id);
+    console.log('Oyuncu bağlandı:', socket.id);
 
     socket.on('oda-degis', (yeniOda) => {
         if(socket.currentRoom) {
             socket.leave(socket.currentRoom);
             if (odadakiOyuncular[socket.currentRoom]) {
-                let eskiOda = socket.currentRoom;
-                odadakiOyuncular[eskiOda] = odadakiOyuncular[eskiOda].filter(o => o.id !== socket.id);
-                if (odadakiOyuncular[eskiOda].aktifSiraId === socket.id) sirayiDegistir(eskiOda);
-                odayiGuncelle(eskiOda);
+                odadakiOyuncular[socket.currentRoom] = odadakiOyuncular[socket.currentRoom].filter(o => o.id !== socket.id);
             }
         }
         socket.join(yeniOda);
         socket.currentRoom = yeniOda;
-        socket.emit('festival-bilgisi', festivaller);
     });
 
     socket.on('yeni-oyuncu-katildi', (data) => {
@@ -65,12 +61,12 @@ io.on('connection', (socket) => {
         }
         
         odadakiOyuncular[oda] = odadakiOyuncular[oda].filter(o => o.id !== socket.id);
-        let oyuncuBilgisi = { id: socket.id, nick: data.nick, avatar: data.avatar, pos: 0, money: 2000000 };
+        let oyuncu = { id: socket.id, nick: data.nick, avatar: data.avatar, pos: 0, money: 2000000 };
+        odadakiOyuncular[oda].push(oyuncu);
         
-        odadakiOyuncular[oda].push(oyuncuBilgisi);
         if (!odadakiOyuncular[oda].aktifSiraId) odadakiOyuncular[oda].aktifSiraId = socket.id;
         
-        socket.to(oda).emit('oyuncu-listesini-guncelle', oyuncuBilgisi);
+        socket.to(oda).emit('oyuncu-listesini-guncelle', oyuncu);
         socket.emit('mevcut-oyuncular', odadakiOyuncular[oda]);
         io.to(oda).emit('sira-guncelle', { aktifSiraId: odadakiOyuncular[oda].aktifSiraId });
         odayiGuncelle(oda);
@@ -102,15 +98,6 @@ io.on('connection', (socket) => {
             let oyuncu = odadakiOyuncular[oda].find(o => o.id === socket.id);
             if (oyuncu) oyuncu.pos = data.yeniPos;
             io.to(oda).emit('tum-oyuncular-guncellendi', odadakiOyuncular[oda]);
-        }
-    });
-
-    socket.on('para-guncelle', (data) => {
-        const oda = socket.currentRoom;
-        if (oda && odadakiOyuncular[oda]) {
-            let oyuncu = odadakiOyuncular[oda].find(o => o.id === socket.id);
-            if (oyuncu) oyuncu.money = data.yeniPara;
-            odayiGuncelle(oda);
         }
     });
 

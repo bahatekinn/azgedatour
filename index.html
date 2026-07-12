@@ -246,7 +246,7 @@
 
 
 
-/* board sınıfını bu şekilde güncelle */
+/* CSS kısmına bunu yapıştır */
 .board { 
     display: grid; 
     grid-template-columns: repeat(9, 1fr); 
@@ -255,13 +255,26 @@
     background: #040406; 
     padding: 10px; 
     border-radius: 20px; 
-    position: relative; 
-    border: 1px solid rgba(255,255,255,0.03); 
     margin: 0 auto; 
     width: 100%; 
     max-width: 800px;
+    height: 800px; /* Kare olması için yükseklik verdik */
 }
 
+.center-area {
+    grid-column: 2 / 9; /* 2. sütundan 9. sütuna kadar */
+    grid-row: 2 / 9;    /* 2. satırdan 9. satıra kadar */
+    background-color: #0c0e14;
+    background-image: url('/public/avatarlar/turkiye-harita.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
 
 
         
@@ -3162,26 +3175,56 @@ function refreshTradeSelectBoxes() {
 
 
       // ZAR BUTTONU TETİKLEYİCİSİ
-zarBtn.onclick = () => {
-    // 1. Oyun başlamış mı kontrol et
-    if (mainGameUI.style.display !== 'flex') return;
+
+    // 4. İsteği // Zar butonu tıklama olayını garantili ve hatasız yöntemle tanımlıyoruz
+document.addEventListener('DOMContentLoaded', () => {
     
-    // 2. Zar fonksiyonu kilitli mi?
-    if (zarBtn.disabled) return;
+    // Değişkeni içeride tanımlıyoruz ki HTML yüklendiğinden emin olalım
+    const zarBtn = document.getElementById('zarBtn');
+    
+    if (zarBtn) {
+        zarBtn.onclick = () => {
+            // 1. Oyun başlamış mı?
+            // mainGameUI değişkeninin global olduğundan emin ol (yukarıda tanımlı olmalı)
+            const mainGameUI = document.getElementById('mainGameUI');
+            
+            if (!mainGameUI || mainGameUI.style.display !== 'flex') {
+                showToast("Oyun başlamadı!");
+                return;
+            }
 
-    socket.emit('zar-at');
-    zarBtn.disabled = true; // Basınca butonu kapat
-    d1.classList.add('dice-shake');
-    d2.classList.add('dice-shake');
-    playSound('dice');
+            // 2. Buton kilitli mi?
+            if (zarBtn.disabled) return;
 
-    window.zarKaristirici = setInterval(() => {
-        d1.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
-        d2.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
-    }, 60);
-};
-    // 4. İsteği gönder
-    socket.emit('zar-at');
+            // 3. Zar işlemleri
+            socket.emit('zar-at');
+            zarBtn.disabled = true; // Basınca butonu kapat
+            
+            // d1 ve d2 değişkenlerinin yukarıda tanımlı olduğunu varsayıyorum
+            const d1 = document.getElementById('d1');
+            const d2 = document.getElementById('d2');
+            
+            d1.classList.add('dice-shake');
+            d2.classList.add('dice-shake');
+            playSound('dice');
+
+            window.zarKaristirici = setInterval(() => {
+                d1.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
+                d2.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
+            }, 60);
+
+            // 4. SİGORTA: 5 saniye sonra hala zar dönüyorsa zorla durdur
+            setTimeout(() => {
+                if (zarBtn.disabled) {
+                    clearInterval(window.zarKaristirici);
+                    zarBtn.disabled = false;
+                    d1.classList.remove('dice-shake');
+                    d2.classList.remove('dice-shake');
+                }
+            }, 5000);
+        };
+    }
+});
 
 
 
