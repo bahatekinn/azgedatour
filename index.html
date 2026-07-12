@@ -566,6 +566,15 @@
 
             </div>
 
+            <div id="championshipModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#1e1e2e; color:#fff; padding:25px; border-radius:12px; width:90%; max-width:400px; text-align:center; border:2px solid #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);">
+        <h3 style="color:#f59e0b; margin-top:0;">🏆 DÜNYA ŞAMPİYONASI</h3>
+        <p style="font-size:14px; color:#a3a3c2;">Bir şehrinizi şampiyona şehri seçerek kirasını 2 katına (x2) çıkarın!</p>
+        <div id="championshipCityList" style="max-height:200px; overflow-y:auto; margin:15px 0; display:flex; flex-direction:column; gap:8px;"></div>
+        <button onclick="closeChampionshipModal()" style="background:#4b5563; color:#fff; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; width:100%;">Pas Geç</button>
+    </div>
+</div>
+
 
 
             <!-- TAKAS PANELİ -->
@@ -930,11 +939,11 @@ const haritaDizisi = [
     { id: 22, ad: "ŞANS KARTLARI", img: "❓", side: 0, color: "chance", type: "special" },
     { id: 23, ad: "Trabzon", img: "🐟", fiyat: 450000, kira: [45000, 140000, 420000, 1250000], side: 0, color: "karadeniz", type: "city" },
     
-    // SAĞ ÜST KÖŞE (id: 24)
-    { id: 24, ad: "VERGİ DAİRESİ", img: "⚖️", type: "special" },
+    // SAĞ ÜST KÖŞE (id: 24) — DÜNYA ŞAMPİYONASI BURAYA GELDİ
+    { id: 24, ad: "DÜNYA ŞAMPİYONASI", img: "🏆", type: "special" },
     
     // SAĞ SIRA (Yukarıdan Aşağıya Doğru İlerliyor - side: 1)
-    { id: 25, ad: "Erzurum", img: "🧊", fiyat: 480000, kira: [48000, 150000, 450000, 1400000], side: 1, color: "dogu", type: "city" },
+    { id: 25, ad: "VERGİ DAİRESİ", img: "⚖️", type: "special" }, // Erzurum kalktı, Vergi buraya geldi
     { id: 26, ad: "Malatya", img: "🍑", fiyat: 500000, kira: [50000, 160000, 480000, 1500000], side: 1, color: "dogu", type: "city" },
     { id: 27, ad: "Van", img: "🐈", fiyat: 520000, kira: [52000, 165000, 500000, 1600000], side: 1, color: "dogu", type: "city" },
     { id: 28, ad: "Antalya Resort", img: "☀️", fiyat: 200000, side: 1, type: "resort" },
@@ -942,9 +951,6 @@ const haritaDizisi = [
     { id: 30, ad: "Şanlıurfa", img: "🌶️", fiyat: 580000, kira: [58000, 190000, 580000, 1900000], side: 1, color: "guneydogu", type: "city" },
     { id: 31, ad: "Diyarbakır", img: "🍉", fiyat: 600000, kira: [60000, 200000, 600000, 2000000], side: 1, color: "guneydogu", type: "city" }
 ];
-
-
-
        const gridHarita = [
     16, 17, 18, 19, 20, 21, 22, 23, 24,
     15, -1, -1, -1, -1, -1, -1, -1, 25,

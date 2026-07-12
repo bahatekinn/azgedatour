@@ -171,6 +171,15 @@ io.on('connection', (socket) => {
         }
     });
 
+    // DÜNYA ŞAMPİYONASI (Seçilen şehri odadaki diğer herkese senkronize fırlatır)
+    socket.on('sampiyona-ilan-et', (data) => {
+        const oda = socket.currentRoom;
+        if (oda) {
+            // Odadaki diğer oyunculara şampiyona bilgisini gönderiyoruz
+            socket.to(oda).emit('sampiyona-guncelle', { sehirId: data.sehirId });
+        }
+    });
+
     // MÜLK, UÇUŞ VE PARA GÜNCELLEMELERİ
     socket.on('mulk-islem', (data) => { if (socket.currentRoom) socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data); });
     socket.on('uctu', (data) => { if (socket.currentRoom) socket.to(socket.currentRoom).emit('uctu-bilgisi', data); });
