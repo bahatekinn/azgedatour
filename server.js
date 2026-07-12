@@ -270,54 +270,56 @@ socket.on('piyon-hareket-etti', (data) => {
     // ZAR (Sıra tabanlı ve Ağırlıklandırılmış Özel Zar Olasılığı)
 
    socket.on('zar-at', () => {
-        const oda = socket.currentRoom;
-        if (oda && odadakiOyuncular[oda]) {
-            // GÜVENLİK KONTROLÜ: 
-            // 1. Sıra bu oyuncuda mı?
-            // 2. Bu oyuncu bu tur zaten zar attı mı?
-            if (odadakiOyuncular[oda].aktifSiraId !== socket.id || odadakiOyuncular[oda].zarAttiMi) {
-                return; // Sırası olmayan veya mükerrer basan oyuncunun isteğini reddet
-            }
-
-            odadakiOyuncular[oda].zarAttiMi = true; // Oyuncu zar hakkını anında kilitle
-
-            // --- STRATEJİK AĞIRLIKLI ZAR MOTORU ---
-            const zarHavuzu = [
-                6,6,6,6,6,6,6,6,6,6,
-                5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
-                1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-                2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-                3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-                4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
-            ];
-
-            const zar1 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
-            const zar2 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
-            const cift = (zar1 === zar2);
-            
-            io.to(oda).emit('zar-sonucu', {
-                oyuncuId: socket.id,
-                deger: zar1 + zar2,
-                zar1: zar1,
-                zar2: zar2,
-                cift: cift
-            });
-
-            // Eğer çift zar gelmediyse, süre sonunda sırayı değiştir
-            if (!cift) {
-                setTimeout(() => {
-                    sirayiDegistir(oda);
-                }, 2500);
-            } else {
-                // Çift zar gelirse oyuncunun aynı tur içinde tekrar zar atabilmesi için kilidi aç
-                setTimeout(() => {
-                    odadakiOyuncular[oda].zarAttiMi = false;
-                }, 1000);
-            }
+    const oda = socket.currentRoom;
+    if (oda && odadakiOyuncular[oda]) {
+        // GÜVENLİK KONTROLÜ: 
+        // 1. Sıra bu oyuncuda mı?
+        // 2. Bu oyuncu bu tur zaten zar attı mı? (Çift zar değilse)
+        if (odadakiOyuncular[oda].aktifSiraId !== socket.id || odadakiOyuncular[oda].zarAttiMi) {
+            return; // Yetkisiz veya mükerrer zar isteğini reddet
         }
-    });
 
+        // Oyuncu zar hakkını hemen kilitle
+        odadakiOyuncular[oda].zarAttiMi = true; 
 
+        // --- STRATEJİK AĞIRLIKLI ZAR MOTORU ---
+        const zarHavuzu = [
+            6,6,6,6,6,6,6,6,6,6,
+            5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+            2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+            3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+            4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
+        ];
+
+        const zar1 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
+        const zar2 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
+        const cift = (zar1 === zar2);
+        
+        // Zar sonucunu herkesle paylaş
+        io.to(oda).emit('zar-sonucu', {
+            oyuncuId: socket.id,
+            deger: zar1 + zar2,
+            zar1: zar1,
+            zar2: zar2,
+            cift: cift
+        });
+
+        // Çift zar gelmediyse sıra geçişi başlat
+        if (!cift) {
+            setTimeout(() => {
+                sirayiDegistir(oda);
+            }, 2500); // Animasyon süresine göre ayarlandı
+        } else {
+            // Çift zar geldiyse, 1 saniye sonra zar hakkını geri ver (tekrar atabilsin diye)
+            setTimeout(() => {
+                if (odadakiOyuncular[oda]) {
+                    odadakiOyuncular[oda].zarAttiMi = false;
+                }
+            }, 1000);
+        }
+    }
+});
 
     // DÜNYA ŞAMPİYONASI (Seçilen mülkü sunucu hafızasına kaydeder ve odadaki herkese fırlatır)
 

@@ -2439,187 +2439,75 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
         // SUNUCUDAN GELEN ZAR SONUCU (ÇOKLU OYUNCU ENTEGRASYONLU)
 
 socket.on('zar-sonucu', (data) => {
-    // ZAR DÖNGÜSÜNÜ KESİN DURDUR
+    // 1. ZAR DÖNGÜSÜNÜ KESİN DURDUR
     if (window.zarKaristirici) {
         clearInterval(window.zarKaristirici);
         window.zarKaristirici = null;
     }
 
+    // 2. Zar efektlerini kaldır
     d1.classList.remove('dice-shake');
     d2.classList.remove('dice-shake');
-    zarBtn.disabled = false;
+    
+    // ZAR BUTONUNU İLK AŞAMADA KİLİTLİ TUT (Sıra kontrolüne kadar)
+    zarBtn.disabled = true; 
     
     d1.innerText = zarEmojileri[data.zar1];
     d2.innerText = zarEmojileri[data.zar2];
     addLog(`Zar Atıldı: [${data.deger}]`);
-   
 
-
-
-            zarBtn.disabled = false;
-
-
-
-
-
-
-
-            d1.innerText = zarEmojileri[data.zar1];
-
-
-
-            d2.innerText = zarEmojileri[data.zar2];
-
-
-
-            addLog(`Zar Atıldı: [${data.deger}]`);
-
-
-
-
-
-
-
-            // Hangi oyuncunun yürüyeceğini sunucu belirliyor
-
-
-
-            let yuruyenOyuncuId = data.oyuncuId;
-
-
-
-            let hedefOyuncu = tumOyuncularListesi.find(o => o.id === yuruyenOyuncuId);
-
-
-
-            
-
-
-
-            if (!hedefOyuncu) {
-
-
-
-                hedefOyuncu = { id: yuruyenOyuncuId, pos: 0, avatar: window.OYUN_DATA.secilenAvatar || '/public/avatarlar/avatar1.jpg' };
-
-
-                tumOyuncularListesi.push(hedefOyuncu);
-
-
-
-            }
-
-
-
-
-
-
-
-            // Oyun mantığı sadece zarı atan KENDİ oyuncumuz ise çalışır
-
-
-
-            if (yuruyenOyuncuId === socket.id) {
-
-
-
-                if (benimKarakter.inJail) {
-
-
-
-                    if (data.cift) {
-
-
-
-                        benimKarakter.inJail = false; benimKarakter.jailTurns = 0;
-
-
-
-                        showToast("🔓 Çift zar! Kayıp Ada'dan kurtuldunuz.");
-
-
-
-                    } else {
-
-
-
-                        benimKarakter.jailTurns++;
-
-
-
-                        if (benimKarakter.jailTurns >= 3) {
-
-
-
-                            benimKarakter.inJail = false; benimKarakter.jailTurns = 0;
-
-
-
-                            showToast("🔓 3 tur doldu, adadan serbest kaldınız.");
-
-
-
-                        } else {
-
-
-
-                            showToast("❌ Çift gelmedi! Adadasınız."); ekranıYenile(); return;
-
-
-
-                        }
-
-
-
-                    }
-
-
-
+    // 3. Oyuncuyu bul veya oluştur
+    let yuruyenOyuncuId = data.oyuncuId;
+    let hedefOyuncu = tumOyuncularListesi.find(o => o.id === yuruyenOyuncuId);
+
+    if (!hedefOyuncu) {
+        hedefOyuncu = { id: yuruyenOyuncuId, pos: 0, avatar: window.OYUN_DATA.secilenAvatar || '/public/avatarlar/avatar1.jpg' };
+        tumOyuncularListesi.push(hedefOyuncu);
+    }
+
+    // 4. SADECE ZARI ATAN OYUNCU İÇİN OYUN MANTIĞI
+    if (yuruyenOyuncuId === socket.id) {
+        if (benimKarakter.inJail) {
+            if (data.cift) {
+                benimKarakter.inJail = false; 
+                benimKarakter.jailTurns = 0;
+                showToast("🔓 Çift zar! Kayıp Ada'dan kurtuldunuz.");
+            } else {
+                benimKarakter.jailTurns++;
+                if (benimKarakter.jailTurns >= 3) {
+                    benimKarakter.inJail = false; 
+                    benimKarakter.jailTurns = 0;
+                    showToast("🔓 3 tur doldu, adadan serbest kaldınız.");
                 } else {
-
-
-
-                    if (data.cift) {
-
-
-
-                        ciftZarSayaci++;
-
-
-
-                        if (ciftZarSayaci === 3) {
-
-
-
-                            ciftZarSayaci = 0; benimKarakter.pos = 8; benimKarakter.inJail = true;
-
-
-
-                            showToast("🚨 3 Kez Çift Zar! Kayıp Ada'ya düştünüz.");
-
-
-
-                            socket.emit('piyon-hareket-etti', { yeniPos: 8 });
-
-
-
-                            piyonuCiz(tumOyuncularListesi); ekranıYenile(); return;
-
-
-
-                        }
-
-
-
-                    } else { ciftZarSayaci = 0; }
-
-
-
+                    showToast("❌ Çift gelmedi! Adadasınız."); 
+                    ekranıYenile(); 
+                    return; // Zar atıldı ama hareket yok, fonksiyondan çık
                 }
-
-
-
             }
+        } else {
+            if (data.cift) {
+                ciftZarSayaci++;
+                if (ciftZarSayaci === 3) {
+                    ciftZarSayaci = 0; 
+                    benimKarakter.pos = 8; 
+                    benimKarakter.inJail = true;
+                    showToast("🚨 3 Kez Çift Zar! Kayıp Ada'ya düştünüz.");
+                    socket.emit('piyon-hareket-etti', { yeniPos: 8 });
+                    piyonuCiz(tumOyuncularListesi); 
+                    ekranıYenile(); 
+                    return;
+                }
+            } else { 
+                ciftZarSayaci = 0; 
+            }
+        }
+        
+        // Buraya piyonun yürümesi için gerekli tetikleyiciyi eklemelisin (Örn: piyonuHareketEttir(data.deger))
+    } 
+    
+    // NOT: zarBtn'i burada tekrar 'false' YAPMA!
+    // Sıra kontrolünü sunucudan gelen 'sira-guncelle' eventi yapmalı.
+});
 
 
 
@@ -2695,7 +2583,7 @@ socket.on('zar-sonucu', (data) => {
 
 
 
-        });
+    
 
 
 
