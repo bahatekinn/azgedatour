@@ -104,10 +104,10 @@ io.on('connection', (socket) => {
         // Kendisine odada halihazırda bekleyen oyuncuları gönder
         socket.emit('mevcut-oyuncular', odadakiOyuncular[oda]);
 
-        // Herkese güncel sıra bilgisini fırlat
+        // En başta sırayı fırlatıyoruz kanka
         io.to(oda).emit('sira-guncelle', { aktifSiraId: odadakiOyuncular[oda].aktifSiraId });
 
-        // Herkese güncel online listesini fırlat (Böylece panellerde anlık gözükeceksiniz)
+        // Herkese güncel online listesini fırlat
         odayiGuncelle(oda);
     });
 
@@ -133,16 +133,12 @@ io.on('connection', (socket) => {
         if (oda && odadakiOyuncular[oda]) {
             // Güvenlik Kontrolü: Sıra bu oyuncuda mı ve bu tur zaten zar attı mı?
             if (odadakiOyuncular[oda].aktifSiraId !== socket.id || odadakiOyuncular[oda].zarAttiMi) {
-                return; // Sırası olmayan veya mükerrer basan oyuncunun isteğini reddet
+                return; // Sırası olmayan oyuncuyu reddet
             }
 
             odadakiOyuncular[oda].zarAttiMi = true; // Oyuncu zar hakkını kullandı
 
             // --- STRATEJİK AĞIRLIKLI ZAR MOTORU ---
-            // Havuzda 100 adet eleman var.
-            // 10 adet 6 (%10 ihtimal)
-            // 25 adet 5 (%25 ihtimal)
-            // Geriye kalan 65 slot ise 1, 2, 3 ve 4 sayılarına dengeli dağıtıldı.
             const zarHavuzu = [
                 6,6,6,6,6,6,6,6,6,6, 
                 5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
@@ -152,12 +148,12 @@ io.on('connection', (socket) => {
                 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
             ];
 
-            // Havuzun içerisinden tamamen rastgele birer sayı seçtiriyoruz
             const zar1 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
             const zar2 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
             const cift = (zar1 === zar2);
             
             io.to(oda).emit('zar-sonucu', { 
+                oyunId: socket.id, // Eski uyumluluk için oyunId mülkünü koruyoruz kanka
                 oyuncuId: socket.id, 
                 deger: zar1 + zar2, 
                 zar1: zar1, 
@@ -165,7 +161,7 @@ io.on('connection', (socket) => {
                 cift: cift 
             });
 
-            // Eğer çift zar GEKMEDİYSE piyon yürüme animasyonundan sonra (yaklaşık 2.5 saniye) sırayı devret
+            // Eğer çift zar gelmediyse piyon yürüme animasyonundan sonra sırayı devret
             if (!cift) {
                 setTimeout(() => {
                     sirayiDegistir(oda);
@@ -177,14 +173,37 @@ io.on('connection', (socket) => {
         }
     });
 
-    // DÜNYA ŞAMPİYONASI (Seçilen mülkü sunucu hafızasına kaydeder ve odadaki herkese fırlatır)
+    // DÜNYA ŞAMPİYONASI
     socket.on('sampiyona-ilan-et', (data) => {
         const oda = socket.currentRoom;
         if (oda && odadakiOyuncular[oda]) {
-            // Şampiyona mülk ID bilgisini odanın durum hafızasına kalıcı alıyoruz kanka
             odadakiOyuncular[oda].dunyaSampiyonasiSehirId = data.sehirId;
-            // Odadaki diğer oyuncuların ekranında da kupa emojisi anlık tetiklensin diye yayınlıyoruz
             socket.to(oda).emit('sampiyona-guncelle', { sehirId: data.sehirId });
+        }
+    });
+
+    // 🤝 ÇOKLU OYUNCU DINAMIK TAKAS MOTORU (EKSEDİLEN KISIM BURASIYDI KANKA)
+    socket.on('takas-teklifi-gonder', (data) => {
+        // Takas teklifini sadece seçilen aliciId socket'ine özel olarak iletiyoruz kanka
+        io.to(data.aliciId).emit('takas-teklifi-al', data);
+    });
+
+    socket.on('takas-cevabi-ver', (data) => {
+        const oda = socket.currentRoom;
+        if (data.kabulEdildiMi) {
+            // Eğer karşı taraf kabul ettiyse iki oyuncunun da ekranını senkronize etmek için odaya başarı sinyali fırlatıyoruz
+            io.to(oda).emit('takas-sonuc-bilgisi', {
+                status: "success",
+                gonderenId: data.gonderenId,
+                aliciId: data.aliciId,
+                myMulkId: data.myMulkId,
+                botMulkId: data.botMulkId,
+                giveCash: data.giveCash,
+                takeCash: data.takeCash
+            });
+        } else {
+            // Reddedildiyse sadece teklif sahibine olumsuz dönüş yapıyoruz kanka
+            io.to(data.gonderenId).emit('takas-sonuc-bilgisi', { status: "declined" });
         }
     });
 
