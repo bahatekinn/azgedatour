@@ -126,8 +126,7 @@
 
         
 
-        .cell { background: #131520; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 4px; font-size: 10px; font-weight: 700; position: relative; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.01); cursor: pointer; transition: all 0.2s ease; overflow: hidden; }
-
+        .cell { background: #131520; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 4px; font-size: 11.5px; font-weight: 800; position: relative; color: #ffffff; border: 1px solid rgba(255,255,255,0.01); cursor: pointer; transition: all 0.2s ease; overflow: hidden; }
         .cell:hover { transform: scale(1.05); z-index: 10; border-color: #ff9f43; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
 
         
@@ -138,8 +137,7 @@
 
         
 
-        .house-row { display: flex; gap: 1px; font-size: 10px; margin-top: 5px; min-height: 12px; }
-
+.house-row { display: flex; gap: 1px; font-size: 11px; margin-top: 5px; min-height: 12px; font-weight: bold; }
         .cell-img { font-size: 18px; margin: 1px 0; }
 
         .special { background: #202430 !important; color: #ff9f43; justify-content: center; }
@@ -168,7 +166,13 @@
 
 
 
-        .price-tag { font-size: 8px; color: #64748b; font-family: monospace; }
+        .price-tag { 
+    font-size: 10px; 
+    color: #e2e8f0; 
+    font-family: monospace; 
+    font-weight: bold;
+    margin-bottom: 2px;
+}
 
         .board.flight-mode { border: 2px solid #ff9f43; box-shadow: 0 0 25px rgba(255,159,67,0.3); }
 
@@ -1306,7 +1310,7 @@
 
                 playSound('dice');
 
-            }, 500); 
+            }, 220); 
 
         }
 
