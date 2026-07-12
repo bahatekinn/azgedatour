@@ -963,12 +963,12 @@ const haritaDizisi = [
      8,  7,  6,  5,  4,  3,  2,  1,  0
 ];
 
-
         let benimKarakter = { pos: 0, money: 2000000, inJail: false, jailTurns: 0, hasJailCard: false };
-
         let benimMulklerim = {};
-
         let botMulkleri = {};
+        let dunyaSampiyonasiSehirId = null; // 🏆 Şampiyona ilan edilen şehrin id'sini tutar
+
+       
 
         let seciLenAvatar = '/public/avatarlar/avatar1.jpg';
 
@@ -1753,26 +1753,46 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
 
 
 
-        function aksiyonHesapla(pos, ciftMi) {
-
+       function aksiyonHesapla(pos, ciftMi) {
             buildMenu.style.display = 'none';
-
             if (pos === 8) { benimKarakter.inJail = true; showToast("🏝️ Kayıp Ada'ya mahsur kaldınız."); addLog("Kayıp Ada'ya düşüldü."); ekranıYenile(); return; }
-
             if (pos === 16) { dunyaTuruModu = true; showToast("✈️ Dünya Turu! Işınlanmak için bir ile tıklayın."); addLog("Dünya Turu hakkı kazanıldı."); ekranıYenile(); return; }
-
+            
+            // 🏆 DÜNYA ŞAMPİYONASI AKSİYONU (id: 24)
             if (pos === 24) {
-
-                let mSayi = Object.keys(benimMulklerim).length; let vergi = mSayi * 60000; benimKarakter.money -= vergi;
-
-                playSound('money'); triggerCashAnim(`-${vergi.toLocaleString()} ₺`, "#e11d48");
-
-                showToast(`⚖️ Vergi Dairesi: ${vergi.toLocaleString()} ₺ vergi kesildi.`); addLog(`${vergi.toLocaleString()} ₺ mülk vergisi ödendi.`);
-
-                socket.emit('para-guncelle', { yeniPara: benimKarakter.money });
-
+                showToast("🏆 Dünya Şampiyonası karesine geldiniz!");
+                // Haritada bana ait olan şehirleri filtrele (resortlar hariç, city olanlar)
+                const benimSehirler = haritaDizisi.filter(kare => benimMulklerim[kare.id] !== undefined && kare.type === "city");
+                
+                if (benimSehirler.length === 0) {
+                    showToast("Şampiyona düzenlemek için hiç şehriniz yok!", "warning");
+                } else {
+                    const listContainer = document.getElementById("championshipCityList");
+                    listContainer.innerHTML = "";
+                    
+                    benimSehirler.forEach(sehir => {
+                        const btn = document.createElement("button");
+                        btn.innerText = `${sehir.img} ${sehir.ad}`;
+                        btn.style = "background:#2d2d44; color:#fff; border:1px solid #444; padding:10px; border-radius:6px; cursor:pointer; text-align:left; font-weight:bold; transition:0.2s; width:100%; margin-bottom:4px;";
+                        btn.onmouseover = () => btn.style.background = "#f59e0b";
+                        btn.onmouseout = () => btn.style.background = "#2d2d44";
+                        btn.onclick = () => {
+                            sampiyonaSec(sehir.id);
+                        };
+                        listContainer.appendChild(btn);
+                    });
+                    document.getElementById("championshipModal").style.display = "flex";
+                }
                 ekranıYenile(); return;
+            }
 
+            // ⚖️ YENİ VERGİ DAİRESİ AKSİYONU (id: 25)
+            if (pos === 25) {
+                let mSayi = Object.keys(benimMulklerim).length; let vergi = mSayi * 60000; benimKarakter.money -= vergi;
+                playSound('money'); triggerCashAnim(`-${vergi.toLocaleString()} ₺`, "#e11d48");
+                showToast(`⚖️ Vergi Dairesi: ${vergi.toLocaleString()} ₺ vergi kesildi.`); addLog(`${vergi.toLocaleString()} ₺ mülk vergisi ödendi.`);
+                socket.emit('para-guncelle', { yeniPara: benimKarakter.money });
+                ekranıYenile(); return;
             }
 
 
@@ -1950,6 +1970,33 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
 
 
         function mulkPasGec() { addLog("Mülk pas geçildi."); buildMenu.style.display = 'none'; ekranıYenile(); }
+
+        // 🏆 DÜNYA ŞAMPİYONASI SEÇİM VE KONTROL FONKSİYONLARI
+        function sampiyonaSec(sehirId) {
+            dunyaSampiyonasiSehirId = sehirId;
+            document.getElementById("championshipModal").style.display = "none";
+            
+            // Sunucuya gönderiyoruz ki diğer oyuncuların ekranında da şampiyona senkronize olsun
+            socket.emit('sampiyona-ilan-et', { sehirId: sehirId });
+            
+            const sehir = haritaDizisi.find(k => k.id === sehirId);
+            showToast(`🏆 ${sehir.ad} şehri Dünya Şampiyonası ilan edildi! Kirası 2 katına çıktı!`);
+            addLog(`Dünya Şampiyonası ${sehir.ad} şehrine kuruldu.`);
+            
+            ekranıYenile();
+        }
+
+        function closeChampionshipModal() {
+            document.getElementById("championshipModal").style.display = "none";
+        }
+
+        // Sunucudan gelen şampiyona güncellemesini dinle
+        socket.on('sampiyona-guncelle', (data) => {
+            dunyaSampiyonasiSehirId = data.sehirId;
+            const sehir = haritaDizisi.find(k => k.id === data.sehirId);
+            showToast(`🏆 Rakip, ${sehir.ad} şehrini Dünya Şampiyonası ilan etti!`);
+            ekranıYenile();
+        });
 
 
 

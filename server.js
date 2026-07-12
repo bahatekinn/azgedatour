@@ -63,6 +63,11 @@ io.on('connection', (socket) => {
         socket.join(yeniOda);
         socket.currentRoom = yeniOda; 
         socket.emit('festival-bilgisi', festivaller);
+        
+        // Eğer odada daha önce ilan edilmiş bir Dünya Şampiyonası şehri varsa yeni gelen oyuncuya da bildir
+        if (odadakiOyuncular[yeniOda] && odadakiOyuncular[yeniOda].dunyaSampiyonasiSehirId !== undefined) {
+            socket.emit('sampiyona-guncelle', { sehirId: odadakiOyuncular[yeniOda].dunyaSampiyonasiSehirId });
+        }
     });
 
     // 2. OYUNCU BİLGİLERİYLE KATILDIĞINDA
@@ -72,6 +77,7 @@ io.on('connection', (socket) => {
             odadakiOyuncular[oda] = [];
             odadakiOyuncular[oda].aktifSiraId = null;
             odadakiOyuncular[oda].zarAttiMi = false;
+            odadakiOyuncular[oda].dunyaSampiyonasiSehirId = null; // Oda bazlı şampiyona takibi
         }
         
         // Eğer bu ID odada zaten varsa mükerrer olmasın diye temizle
@@ -171,11 +177,13 @@ io.on('connection', (socket) => {
         }
     });
 
-    // DÜNYA ŞAMPİYONASI (Seçilen şehri odadaki diğer herkese senkronize fırlatır)
+    // DÜNYA ŞAMPİYONASI (Seçilen mülkü sunucu hafızasına kaydeder ve odadaki herkese fırlatır)
     socket.on('sampiyona-ilan-et', (data) => {
         const oda = socket.currentRoom;
-        if (oda) {
-            // Odadaki diğer oyunculara şampiyona bilgisini gönderiyoruz
+        if (oda && odadakiOyuncular[oda]) {
+            // Şampiyona mülk ID bilgisini odanın durum hafızasına kalıcı alıyoruz kanka
+            odadakiOyuncular[oda].dunyaSampiyonasiSehirId = data.sehirId;
+            // Odadaki diğer oyuncuların ekranında da kupa emojisi anlık tetiklensin diye yayınlıyoruz
             socket.to(oda).emit('sampiyona-guncelle', { sehirId: data.sehirId });
         }
     });
