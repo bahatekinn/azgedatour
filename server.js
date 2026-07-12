@@ -6,6 +6,11 @@ const http = require('http').createServer(app);
 
 const io = require('socket.io')(http);
 
+process.on('uncaughtException', (err) => {
+
+console.error('Sunucu Hatası:', err);
+
+});
 
 
 app.use('/public', express.static('public'));
@@ -262,52 +267,52 @@ socket.on('piyon-hareket-etti', (data) => {
     // ZAR (Sıra tabanlı ve Ağırlıklandırılmış Özel Zar Olasılığı)
 
     socket.on('zar-at', () => {
-
         const oda = socket.currentRoom;
-
         if (oda && odadakiOyuncular[oda]) {
-
-            // Güvenlik Kontrolü: Sıra bu oyuncuda mı ve bu tur zaten zar attı mı?
-
+            // GÜVENLİK KONTROLÜ: 
+            // 1. Sıra bu oyuncuda mı?
+            // 2. Bu oyuncu bu tur zaten zar attı mı?
             if (odadakiOyuncular[oda].aktifSiraId !== socket.id || odadakiOyuncular[oda].zarAttiMi) {
-
                 return; // Sırası olmayan veya mükerrer basan oyuncunun isteğini reddet
-
             }
 
-
-
-            odadakiOyuncular[oda].zarAttiMi = true; // Oyuncu zar hakkını kullandı
-
-
+            odadakiOyuncular[oda].zarAttiMi = true; // Oyuncu zar hakkını anında kilitle
 
             // --- STRATEJİK AĞIRLIKLI ZAR MOTORU ---
-
-            // Havuzda 100 adet eleman var.
-
-            // 10 adet 6 (%10 ihtimal)
-
-            // 25 adet 5 (%25 ihtimal)
-
-            // Geriye kalan 65 slot ise 1, 2, 3 ve 4 sayılarına dengeli dağıtıldı.
-
             const zarHavuzu = [
-
                 6,6,6,6,6,6,6,6,6,6,
-
                 5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
-
                 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-
                 2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-
                 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-
                 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
-
             ];
 
+            const zar1 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
+            const zar2 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
+            const cift = (zar1 === zar2);
+            
+            io.to(oda).emit('zar-sonucu', {
+                oyuncuId: socket.id,
+                deger: zar1 + zar2,
+                zar1: zar1,
+                zar2: zar2,
+                cift: cift
+            });
 
+            // Eğer çift zar GEKMEDİYSE piyon yürüme animasyonundan sonra sırayı devret
+            if (!cift) {
+                setTimeout(() => {
+                    sirayiDegistir(oda);
+                }, 2500);
+            } else {
+                // Çift zar gelirse oyuncunun aynı tur içinde tekrar zar atabilmesi için kilidi aç
+                setTimeout(() => {
+                    odadakiOyuncular[oda].zarAttiMi = false;
+                }, 1000);
+            }
+        }
+    });
 
             // Havuzun içerisinden tamamen rastgele birer sayı seçtiriyoruz
 
@@ -355,7 +360,7 @@ socket.on('piyon-hareket-etti', (data) => {
 
         }
 
-    });
+    );
 
 
 
@@ -444,7 +449,7 @@ socket.on('piyon-hareket-etti', (data) => {
 
     });
 
-});
+;
 
 
 
