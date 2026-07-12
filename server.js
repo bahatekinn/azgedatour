@@ -26,6 +26,20 @@ function odayiGuncelle(odaKodu) {
     }
 }
 
+// Sırayı bir sonraki oyuncuya geçiren yardımcı fonksiyon
+function sirayiDegistir(odaKodu) {
+    let oda = odadakiOyuncular[odaKodu];
+    if (!oda || oda.length === 0) return;
+
+    let currentIndex = oda.findIndex(o => o.id === oda.aktifSiraId);
+    let nextIndex = (currentIndex + 1) % oda.length;
+    
+    oda.aktifSiraId = oda[nextIndex].id;
+    oda.zarAttiMi = false; // Yeni oyuncu için zar atma hakkını sıfırla
+
+    io.to(odaKodu).emit('sira-guncelle', { aktifSiraId: oda.aktifSiraId });
+}
+
 io.on('connection', (socket) => {
     console.log('Bir oyuncu bağlandı! ID:', socket.id);
     
@@ -35,8 +49,14 @@ io.on('connection', (socket) => {
         if(socket.currentRoom) {
             socket.leave(socket.currentRoom);
             if (odadakiOyuncular[socket.currentRoom]) {
-                odadakiOyuncular[socket.currentRoom] = odadakiOyuncular[socket.currentRoom].filter(o => o.id !== socket.id);
-                odayiGuncelle(socket.currentRoom);
+                let eskiOda = socket.currentRoom;
+                odadakiOyuncular[eskiOda] = odadakiOyuncular[eskiOda].filter(o => o.id !== socket.id);
+                
+                // Eğer sıradaki oyuncu odadan çıktıysa sırayı hemen başkasına devret
+                if (odadakiOyuncular[eskiOda].aktifSiraId === socket.id) {
+                    sirayiDegistir(eskiOda);
+                }
+                odayiGuncelle(eskiOda);
             }
         }
 
@@ -48,7 +68,11 @@ io.on('connection', (socket) => {
     // 2. OYUNCU BİLGİLERİYLE KATILDIĞINDA
     socket.on('yeni-oyuncu-katildi', (data) => {
         const oda = socket.currentRoom || "genel";
-        if (!odadakiOyuncular[oda]) odadakiOyuncular[oda] = [];
+        if (!odadakiOyuncular[oda]) {
+            odadakiOyuncular[oda] = [];
+            odadakiOyuncular[oda].aktifSiraId = null;
+            odadakiOyuncular[oda].zarAttiMi = false;
+        }
         
         // Eğer bu ID odada zaten varsa mükerrer olmasın diye temizle
         odadakiOyuncular[oda] = odadakiOyuncular[oda].filter(o => o.id !== socket.id);
@@ -63,11 +87,19 @@ io.on('connection', (socket) => {
         
         odadakiOyuncular[oda].push(oyuncuBilgisi);
         
+        // Eğer odada aktif bir sıra yoksa (ilk giren oyuncuysa) sırayı ona ver
+        if (!odadakiOyuncular[oda].aktifSiraId) {
+            odadakiOyuncular[oda].aktifSiraId = socket.id;
+        }
+        
         // Odadaki diğer arkadaşlarına yeni birinin geldiğini bildir
         socket.to(oda).emit('oyuncu-listesini-guncelle', oyuncuBilgisi);
         
         // Kendisine odada halihazırda bekleyen oyuncuları gönder
         socket.emit('mevcut-oyuncular', odadakiOyuncular[oda]);
+
+        // Herkese güncel sıra bilgisini fırlat
+        io.to(oda).emit('sira-guncelle', { aktifSiraId: odadakiOyuncular[oda].aktifSiraId });
 
         // Herkese güncel online listesini fırlat (Böylece panellerde anlık gözükeceksiniz)
         odayiGuncelle(oda);
@@ -89,20 +121,38 @@ io.on('connection', (socket) => {
         if (socket.currentRoom) io.to(socket.currentRoom).emit('mesaj-al', data);
     });
 
-    // ZAR (Odaya özel)
+    // ZAR (Sıra tabanlı kontrol entegreli)
     socket.on('zar-at', () => {
         const oda = socket.currentRoom;
-        if (oda) {
+        if (oda && odadakiOyuncular[oda]) {
+            // Güvenlik Kontrolü: Sıra bu oyuncuda mı ve bu tur zaten zar attı mı?
+            if (odadakiOyuncular[oda].aktifSiraId !== socket.id || odadakiOyuncular[oda].zarAttiMi) {
+                return; // Sırası olmayan veya mükerrer basan oyuncunun isteğini reddet
+            }
+
+            odadakiOyuncular[oda].zarAttiMi = true; // Oyuncu zar hakkını kullandı
+
             const zar1 = Math.floor(Math.random() * 6) + 1;
             const zar2 = Math.floor(Math.random() * 6) + 1;
+            const cift = (zar1 === zar2);
             
             io.to(oda).emit('zar-sonucu', { 
                 oyuncuId: socket.id, 
                 deger: zar1 + zar2, 
                 zar1: zar1, 
                 zar2: zar2,
-                cift: zar1 === zar2 
+                cift: cift 
             });
+
+            // Eğer çift zar GEKMEDİYSE piyon yürüme animasyonundan sonra (yaklaşık 2.5 saniye) sırayı devret
+            if (!cift) {
+                setTimeout(() => {
+                    sirayiDegistir(oda);
+                }, 2500); 
+            } else {
+                // Çift zar geldiyse oyuncunun aynı tur içinde tekrar zar atabilmesi için kilidi aç
+                odadakiOyuncular[oda].zarAttiMi = false;
+            }
         }
     });
 
@@ -128,6 +178,11 @@ io.on('connection', (socket) => {
         console.log('Oyuncu ayrıldı:', socket.id);
         const oda = socket.currentRoom;
         if (oda && odadakiOyuncular[oda]) {
+            // Eğer ayrılan kişi şu an oyun sırasına sahipse sırayı başkasına geçir
+            if (odadakiOyuncular[oda].aktifSiraId === socket.id) {
+                sirayiDegistir(oda);
+            }
+            
             // Ayrılan oyuncuyu odadan temizle
             odadakiOyuncular[oda] = odadakiOyuncular[oda].filter(o => o.id !== socket.id);
             odayiGuncelle(oda); // Kalanlara güncel online durumunu bildir

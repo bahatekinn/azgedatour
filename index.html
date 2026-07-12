@@ -719,6 +719,17 @@
             piyonuCiz(tumOyuncularListesi);
 
         });
+        // SUNUCUDAN GELEN SIRA BİLGİSİ
+socket.on('sira-guncelle', (data) => {
+    if (data.aktifSiraId === socket.id) {
+        zarBtn.disabled = false; // Sıra bende, butonu aç
+        document.getElementById('playerHUDCard').classList.add('active-turn'); // HUD kartına parlama efekti ver
+        showToast("🎲 Sıra sende! Zar atabilirsin.");
+    } else {
+        zarBtn.disabled = true; // Sıra başkasında, butonumu kilitle
+        document.getElementById('playerHUDCard').classList.remove('active-turn');
+    }
+});
 
 
 
@@ -1266,54 +1277,49 @@
 
 
 
-        function piyonuYurut(oyuncuId, hedefPos, callback) {
+      function piyonuYurut(oyuncuId, hedefPos, callback) {
+    let oyuncu = tumOyuncularListesi.find(o => o.id === oyuncuId);
+    if (!oyuncu) { console.error("Oyuncu bulunamadı:", oyuncuId); return; }
 
-            let oyuncu = tumOyuncularListesi.find(o => o.id === oyuncuId);
+    if (window.moveInterval) clearInterval(window.moveInterval);
 
-            if (!oyuncu) { console.error("Oyuncu bulunamadı:", oyuncuId); return; }
-
-
-
-            if (window.moveInterval) clearInterval(window.moveInterval);
-
-
-
-            window.moveInterval = setInterval(() => {
-
-                if (oyuncu.pos === hedefPos) {
-
-                    clearInterval(window.moveInterval);
-
-                    if (callback) callback();
-
-                    return;
-
-                }
-
+    window.moveInterval = setInterval(() => {
+        if (oyuncu.pos === hedefPos) {
+            clearInterval(window.moveInterval);
+            if (callback) callback();
+            return;
+        }
+        
+        oyuncu.pos = (oyuncu.pos + 1) % 32;
+        
+        // BAŞLANGIÇ NOKTASINDAN GEÇİŞ KONTROLÜ
+        if (oyuncu.pos === 0) {
+            // Eğer başlangıçtan geçen oyuncu BENSEM para ekle
+            if (oyuncuId === socket.id) {
+                benimKarakter.money += 200000; // Cüzdana 200k ekle
+                playSound('money');
+                triggerCashAnim("+200.000 ₺ Maaş", "#16a34a");
+                showToast("🏁 Başlangıç noktasından geçtiniz, 200.000 ₺ maaş aldınız!");
                 
-
-                oyuncu.pos = (oyuncu.pos + 1) % 32;
-
-                
-
-                // Sunucuya yeni pozisyonumuzu anlık bildirelim (Çoklu piyon takibi için)
-
-                if(oyuncuId === socket.id) {
-
-                    socket.emit('piyon-hareket-etti', { yeniPos: oyuncu.pos });
-
-                }
-
-
-
-                piyonuCiz(tumOyuncularListesi); 
-
-                playSound('dice');
-
-            }, 220); 
-
+                // Yeni paramızı sunucuya fırlatıyoruz ki sıralama paneli güncellensin
+                socket.emit('para-guncelle', { yeniPara: benimKarakter.money });
+            }
+        }
+        
+        if(oyuncuId === socket.id) {
+            socket.emit('piyon-hareket-etti', { yeniPos: oyuncu.pos });
         }
 
+        piyonuCiz(tumOyuncularListesi); 
+        playSound('dice');
+    }, 220);
+    }
+    // Ayarladığın o hızlı tempo hızı duruyor
+
+
+
+
+            
 
 
         // SUNUCUDAN GELEN ZAR SONUCU (ÇOKLU OYUNCU ENTEGRASYONLU)
