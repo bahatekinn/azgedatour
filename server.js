@@ -19,48 +19,84 @@ while(festivaller.length < 3) {
     if(!festivaller.includes(rastgele)) festivaller.push(rastgele);
 }
 
+// Bir odadaki herkese güncel online listesini ve paralarını göndermek için yardımcı fonksiyon
+function odayiGuncelle(odaKodu) {
+    if (odaKodu && odadakiOyuncular[odaKodu]) {
+        io.to(odaKodu).emit('online-oyuncu-listesi', odadakiOyuncular[odaKodu]);
+    }
+}
+
 io.on('connection', (socket) => {
     console.log('Bir oyuncu bağlandı! ID:', socket.id);
     
+    // 1. ODA DEĞİŞTİRME / ODAYA GİRİŞ (Her şeyden önce bu çalışmalı)
     socket.on('oda-degis', (yeniOda) => {
+        // Eğer zaten bir odadaysa önce eski odadan çıkış yapsın
+        if(socket.currentRoom) {
+            socket.leave(socket.currentRoom);
+            if (odadakiOyuncular[socket.currentRoom]) {
+                odadakiOyuncular[socket.currentRoom] = odadakiOyuncular[socket.currentRoom].filter(o => o.id !== socket.id);
+                odayiGuncelle(socket.currentRoom);
+            }
+        }
+
         socket.join(yeniOda);
         socket.currentRoom = yeniOda; 
         socket.emit('festival-bilgisi', festivaller);
     });
 
-    // YENİ OYUNCU KATILDIĞINDA
+    // 2. OYUNCU BİLGİLERİYLE KATILDIĞINDA
     socket.on('yeni-oyuncu-katildi', (data) => {
-        if (!odadakiOyuncular[socket.currentRoom]) odadakiOyuncular[socket.currentRoom] = [];
+        const oda = socket.currentRoom || "genel";
+        if (!odadakiOyuncular[oda]) odadakiOyuncular[oda] = [];
         
-        // Oyuncuya başlangıç pozisyonu (0) ekliyoruz
-        let oyuncuBilgisi = { id: socket.id, nick: data.nick, avatar: data.avatar, pos: 0 };
-        odadakiOyuncular[socket.currentRoom].push(oyuncuBilgisi);
+        // Eğer bu ID odada zaten varsa mükerrer olmasın diye temizle
+        odadakiOyuncular[oda] = odadakiOyuncular[oda].filter(o => o.id !== socket.id);
+
+        let oyuncuBilgisi = { 
+            id: socket.id, 
+            nick: data.nick || `Oyuncu_${Math.floor(Math.random()*100)}`, 
+            avatar: data.avatar, 
+            pos: 0,
+            money: 2000000 // Başlangıç net serveti sıralama için
+        };
         
-        socket.to(socket.currentRoom).emit('oyuncu-listesini-guncelle', oyuncuBilgisi);
-        socket.emit('mevcut-oyuncular', odadakiOyuncular[socket.currentRoom]);
+        odadakiOyuncular[oda].push(oyuncuBilgisi);
+        
+        // Odadaki diğer arkadaşlarına yeni birinin geldiğini bildir
+        socket.to(oda).emit('oyuncu-listesini-guncelle', oyuncuBilgisi);
+        
+        // Kendisine odada halihazırda bekleyen oyuncuları gönder
+        socket.emit('mevcut-oyuncular', odadakiOyuncular[oda]);
+
+        // Herkese güncel online listesini fırlat (Böylece panellerde anlık gözükeceksiniz)
+        odayiGuncelle(oda);
     });
 
-    // OYUNCU HAREKET ETTİĞİNDE POZİSYONU GÜNCELLE
+    // 3. OYUNCU HAREKET ETTİĞİNDE POZİSYONU GÜNCELLE
     socket.on('piyon-hareket-etti', (data) => {
-        if (odadakiOyuncular[socket.currentRoom]) {
-            let oyuncu = odadakiOyuncular[socket.currentRoom].find(o => o.id === socket.id);
+        const oda = socket.currentRoom;
+        if (oda && odadakiOyuncular[oda]) {
+            let oyuncu = odadakiOyuncular[oda].find(o => o.id === socket.id);
             if (oyuncu) oyuncu.pos = data.yeniPos;
-            // Herkese güncel listeyi gönder ki herkes piyonları doğru yere çizsin
-            io.to(socket.currentRoom).emit('tum-oyuncular-guncellendi', odadakiOyuncular[socket.currentRoom]);
+            
+            io.to(oda).emit('tum-oyuncular-guncellendi', odadakiOyuncular[oda]);
         }
     });
 
-    // SOHBET
+    // SOHBET (Odaya özel)
     socket.on('mesaj-yolla', (data) => {
         if (socket.currentRoom) io.to(socket.currentRoom).emit('mesaj-al', data);
     });
 
-    // ZAR
+    // ZAR (Odaya özel)
     socket.on('zar-at', () => {
-        if (socket.currentRoom) {
+        const oda = socket.currentRoom;
+        if (oda) {
             const zar1 = Math.floor(Math.random() * 6) + 1;
             const zar2 = Math.floor(Math.random() * 6) + 1;
-            io.to(socket.currentRoom).emit('zar-sonucu', { 
+            
+            io.to(oda).emit('zar-sonucu', { 
                 oyuncuId: socket.id, 
                 deger: zar1 + zar2, 
                 zar1: zar1, 
@@ -70,17 +106,37 @@ io.on('connection', (socket) => {
         }
     });
 
-    // MÜLK, UÇUŞ VE PARA
-    socket.on('mulk-islem', (data) => { socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data); });
-    socket.on('uctu', (data) => { socket.to(socket.currentRoom).emit('uctu-bilgisi', data); });
-    socket.on('para-guncelle', (data) => { socket.to(socket.currentRoom).emit('para-guncelle-bilgisi', data); });
+    // MÜLK, UÇUŞ VE PARA GÜNCELLEMELERİ
+    socket.on('mulk-islem', (data) => { if (socket.currentRoom) socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data); });
+    socket.on('uctu', (data) => { if (socket.currentRoom) socket.to(socket.currentRoom).emit('uctu-bilgisi', data); });
+    
+    // Para güncellendiğinde sıralama panelinde de paralar anlık değişsin diye sunucuda da parayı tutuyoruz
+    socket.on('para-guncelle', (data) => { 
+        const oda = socket.currentRoom;
+        if (oda && odadakiOyuncular[oda]) {
+            let oyuncu = odadakiOyuncular[oda].find(o => o.id === socket.id);
+            if (oyuncu && data.yeniPara !== undefined) {
+                oyuncu.money = data.yeniPara;
+            }
+            socket.to(oda).emit('para-guncelle-bilgisi', data);
+            odayiGuncelle(oda); // Sıralama tablosunu anlık yeniletir
+        }
+    });
 
+    // BAĞLANTI KOPTIĞINDA LİSTEDEN SİL
     socket.on('disconnect', () => {
         console.log('Oyuncu ayrıldı:', socket.id);
-        // İstersen burada odadakiOyuncular listesinden silme işlemini ekleyebilirsin
+        const oda = socket.currentRoom;
+        if (oda && odadakiOyuncular[oda]) {
+            // Ayrılan oyuncuyu odadan temizle
+            odadakiOyuncular[oda] = odadakiOyuncular[oda].filter(o => o.id !== socket.id);
+            odayiGuncelle(oda); // Kalanlara güncel online durumunu bildir
+        }
     });
 });
 
-http.listen(3000, () => {
-    console.log('Azgeda Tour http://localhost:3000 adresinde çalışıyor!');
+// Render veya yerel port için dinamik port kontrolü
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+    console.log(`Azgeda Tour ${PORT} portunda başarıyla çalışıyor!`);
 });
