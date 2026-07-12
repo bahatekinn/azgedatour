@@ -1124,12 +1124,20 @@ socket.emit('yeni-oyuncu-katildi', {
 function piyonuCiz(tumOyuncular) {
     document.querySelectorAll('.pawn-container').forEach(c => c.innerHTML = '');
 
-    tumOyuncular.forEach(oyuncu => {
+    let list = tumOyuncular || tumOyuncularListesi;
+    if (!list || list.length === 0) {
+        list = [{
+            id: socket.id || 'local',
+            pos: benimKarakter.pos,
+            avatar: seciLenAvatar
+        }];
+    }
+
+    list.forEach(oyuncu => {
         const container = document.getElementById(`pawn-${oyuncu.pos}`);
         if (container) {
-            // Arka plan resmini (avatar) burada set ediyoruz
             container.innerHTML += `
-                <div class="pawn-dot" style="background-image: url('${oyuncu.avatar}'); border: 2px solid ${oyuncu.id === socket.id ? '#ff9f43' : '#fff'};">
+                <div class="pawn-dot" style="background-image: url('${oyuncu.avatar}'); border: 2px solid ${oyuncu.id === socket.id ? '#ff9f43' : '#fff'}; width: 22px; height: 22px;">
                 </div>`;
         }
     });
@@ -1376,43 +1384,41 @@ socket.on('zar-sonucu', (data) => {
 
 
 
-        function tetikleSansKarti() {
+       function tetikleSansKarti() {
+    const kartlar = [
+        { t: "+100.000 ₺ Piyango Çıktı!", m: 100000, type: "plus" },
+        { t: "+300.000 ₺ Yatırım Bonusu!", m: 300000, type: "plus" },
+        { t: "-150.000 ₺ Trafik Cezası!", m: -150000, type: "minus" },
+        { t: "Geriye Düştünüz! Başlangıç Çizgisine Git.", type: "teleport", dest: 0 },
+        { t: "Lüks Tüketim Vergisi Öde: -120.000 ₺", m: -120000, type: "minus" },
+        { t: "Kayıp Ada Ücretsiz Çıkış Kartı Kazandınız! 🎫", type: "jailCard" },
+        { t: "Herkesten Para Al: +50.000 ₺", m: 50000, type: "plus" }
+    ];
+    let secilen = kartlar[Math.floor(Math.random() * kartlar.length)];
+    alert(`❓ ŞANS KARTI ÇEKTİNİZ:\n\n"${secilen.t}"`);
 
-            const kartlar = [
-
-                { t: "+100.000 ₺ Piyango Çıktı!", m: 100000, type: "plus" },
-
-                { t: "+300.000 ₺ Yatırım Bonusu!", m: 300000, type: "plus" },
-
-                { t: "-150.000 ₺ Trafik Cezası!", m: -150000, type: "minus" },
-
-                { t: "Geriye Düştünüz! Başlangıç Çizgisine Git.", type: "teleport", dest: 0 },
-
-                { t: "Lüks Tüketim Vergisi Öde: -120.000 ₺", m: -120000, type: "minus" },
-
-                { t: "Kayıp Ada Ücretsiz Çıkış Kartı Kazandınız! 🎫", type: "jailCard" },
-
-                { t: "Herkesten Para Al: +50.000 ₺", m: 50000, type: "plus" }
-
-            ];
-
-            let secilen = kartlar[Math.floor(Math.random() * kartlar.length)];
-
-            alert(`❓ ŞANS KARTI ÇEKTİNİZ:\n\n"${secilen.t}"`);
-
-
-
-            if(secilen.type === "plus") { benimKarakter.money += secilen.m; playSound('money'); triggerCashAnim(`+${secilen.m.toLocaleString()} ₺`, "#16a34a"); }
-
-            if(secilen.type === "minus") { benimKarakter.money += secilen.m; triggerCashAnim(`${secilen.m.toLocaleString()} ₺`, "#e11d48"); }
-
-            if(secilen.type === "teleport") { benimKarakter.pos = secilen.dest; piyonuCiz(); }
-
-            if(secilen.type === "jailCard") { benimKarakter.hasJailCard = true; }
-
-            ekranıYenile();
-
-        }
+    if(secilen.type === "plus") { 
+        benimKarakter.money += secilen.m; 
+        playSound('money'); 
+        triggerCashAnim(`+${secilen.m.toLocaleString()} ₺`, "#16a34a"); 
+    }
+    if(secilen.type === "minus") { 
+        benimKarakter.money += secilen.m; 
+        triggerCashAnim(`${secilen.m.toLocaleString()} ₺`, "#e11d48"); 
+    }
+  if(secilen.type === "teleport") { 
+        benimKarakter.pos = secilen.dest; 
+        
+        let ben = tumOyuncularListesi.find(o => o.id === socket.id);
+        if (ben) { ben.pos = secilen.dest; }
+        
+        piyonuCiz(tumOyuncularListesi); 
+    }
+    if(secilen.type === "jailCard") { 
+        benimKarakter.hasJailCard = true; 
+    }
+    ekranıYenile();
+}
         
 
             let rollCount = 0;
@@ -1733,25 +1739,38 @@ socket.on('zar-sonucu', (data) => {
 
 
     // ZAR ATMA VE SONUÇ İŞLEMLERİ
+// ZAR BUTTONU TETİKLEYİCİSİ
 zarBtn.onclick = () => {
     if (dunyaTuruModu) return;
+    
     socket.emit('zar-at');
     zarBtn.disabled = true;
     d1.classList.add('dice-shake');
     d2.classList.add('dice-shake');
     playSound('dice');
+
+    // Sunucudan yanıt gelene kadar zarları görsel olarak hızlıca döndür
+    window.zarKaristirici = setInterval(() => {
+        d1.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
+        d2.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
+    }, 60);
 };
 
+// SUNUCUDAN GELEN ZAR SONUCU
 socket.on('zar-sonucu', (data) => {
+    // Görsel zar karıştırma efektini durdur
+    clearInterval(window.zarKaristirici);
+    
     d1.classList.remove('dice-shake');
     d2.classList.remove('dice-shake');
     zarBtn.disabled = false;
 
+    // Gelen gerçek sonuçları ekrana bas
     d1.innerText = zarEmojileri[data.zar1];
     d2.innerText = zarEmojileri[data.zar2];
     addLog(`Zar Atıldı: [${data.deger}]`);
 
-    // Oyun mantığı (Hapis ve Çift Zar)
+    // Hapis / Kayıp Ada Kontrolleri
     if (benimKarakter.inJail) {
         if (benimKarakter.hasJailCard) {
             benimKarakter.inJail = false; benimKarakter.jailTurns = 0; benimKarakter.hasJailCard = false;
@@ -1780,20 +1799,30 @@ socket.on('zar-sonucu', (data) => {
         } else { ciftZarSayaci = 0; }
     }
 
-    // Piyonu hareket ettir (Burada hedefi belirliyoruz)
+    // Hedef konumu bul
     let yeniHedef = (benimKarakter.pos + data.deger) % 32;
-    benimKarakter.pos = yeniHedef; // Karakterin konumunu güncelle
 
-    piyonuYurut(socket.id, yeniHedef, () => {
+    // Çoklu oyuncu listesinde kendi piyonunun mevcut konumunu senkronize et
+    let ben = tumOyuncularListesi.find(o => o.id === socket.id);
+    if (ben) { ben.pos = benimKarakter.pos; }
+
+    // Piyonu kare kare yürütmeye başla
+    piyonuYurut(socket.id || 'local', yeniHedef, () => {
+        // YÜRÜME BİTTİĞİNDE TETİKLENECEK ALAN:
+        benimKarakter.pos = yeniHedef; // Konumu şimdi güncelle
+        if (ben) { ben.pos = yeniHedef; }
+
         addLog(`${haritaDizisi[yeniHedef].ad} konumuna varıldı.`);
-        if(haritaDizisi[yeniHedef].color === "chance") { 
+        
+        if (haritaDizisi[yeniHedef].color === "chance") { 
             tetikleSansKarti(); 
         } else { 
             aksiyonHesapla(yeniHedef, data.cift); 
         }
+        ekranıYenile();
     });
 });
-</script>
+
 </script>
 
 
