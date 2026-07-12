@@ -2,6 +2,9 @@
 
 
 
+
+
+
 <html lang="tr">
 
 
@@ -929,62 +932,414 @@
 
 
 
-  <!-- 2. ANA OYUN ARENASI -->
-<div class="game-container glass-panel" id="mainGameUI">
+    <div class="game-container glass-panel" id="mainGameUI">
 
-    <!-- 1. SOL: SOHBET (Artık en solda) -->
-    <div id="chat-box" style="width: 250px; flex-shrink: 0; border: 1px solid #ff9f43; padding: 10px; border-radius: 12px; background: #161925; display: flex; flex-direction: column;">
-        <div style="margin-bottom: 10px; font-weight: bold; color: #ff9f43;">Sohbet</div>
-        <div id="messages" style="flex-grow: 1; height: 400px; overflow-y: auto; color: white; font-size: 12px; margin-bottom: 10px; border-bottom: 1px solid #333;"></div>
-        <input type="text" id="chatInput" placeholder="Mesaj yaz..." style="width: 100%; padding: 8px; border-radius: 6px; border: none; margin-bottom: 5px;">
-        <button onclick="mesajGonder()" style="width: 100%; padding: 8px; border-radius: 6px; cursor: pointer;">Gönder</button>
-    </div>
 
-    <!-- 2. ORTA: HARİTA (Board) -->
-    <div class="board" id="game-board">
-        <!-- Burası JS tarafından doldurulacak, içini boş bırakıyoruz -->
-    </div>
 
-    <!-- 3. SAĞ: PANEL (Sıralama ve Bilgiler) -->
-    <div class="side-panel" style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
-        <div class="info-box" id="game-log">Tur günlükleri burada listelenir...</div>
-        <button class="btn-action" id="payJailBtn" style="display:none;">Kefalet Öde (200.000 ₺) 💸</button>
+        <!-- Chat Alanı -->
 
-        <!-- Oyuncu Kartı -->
-        <div class="player-card active-turn" id="playerHUDCard">
-            <div class="turn-badge">SIRA SENDE</div>
-            <div class="hud-main-info">
-                <div class="player-avatar-box" id="hud-avatar"></div>
-                <div class="player-info-meta">
-                    <strong id="hud-username">Oyuncu</strong>
-                    <div class="player-money" id="my-money">2.000.000 ₺</div>
-                    <div class="player-stats-row">
-                        <span id="stat-properties">🏢 0 mülk</span>
-                        <span id="stat-worth">⭐ 2.0M ₺</span>
-                    </div>
+
+
+        <div id="chat-box" style="margin-top:20px; border:1px solid #ff9f43; padding:10px; width:100%;">
+
+
+
+            <input type="text" id="chatInput" placeholder="Mesaj yaz...">
+
+
+
+            <button onclick="mesajGonder()">Gönder</button>
+
+
+
+            <div id="messages" style="color:white; font-size:12px; margin-top:5px;"></div>
+
+
+
+        </div>
+
+
+
+        <div class="board" id="game-board">
+
+
+
+            
+
+
+
+            <div class="center-area">
+
+
+
+                
+
+
+
+                <canvas class="particles-layer" id="particlesCanvas"></canvas>
+
+
+
+                
+
+
+
+                <div class="center-dice-box">
+
+
+
+                    <div class="dice-face" id="d1">⚀</div>
+
+
+
+                    <div class="dice-face" id="d2">⚀</div>
+
+
+
                 </div>
+
+
+
+                
+
+
+
+                <button class="btn-dice" id="zarBtn">Zar At 🎲</button>
+
+
+
+
+
+
+
+                <!-- ORTA ALANA ALINAN BUSINESS TOUR PANELI -->
+
+
+
+                <div class="build-menu-box" id="buildMenu">
+
+
+
+                    <button class="build-option-btn" id="b-opt-0" onclick="buyMulkLevel(0)"><span>🏢 Sadece Arsa Al</span><span id="b-prc-0">-</span></button>
+
+
+
+                    <button class="build-option-btn" id="b-opt-1" onclick="buyMulkLevel(1)"><span>🏠 Arsa + 1 Ev</span><span id="b-prc-1">-</span></button>
+
+
+
+                    <button class="build-option-btn" id="b-opt-2" onclick="buyMulkLevel(2)"><span>🏠🏠 Arsa + 2 Ev</span><span id="b-prc-2">-</span></button>
+
+
+
+                    <button class="build-option-btn" id="b-opt-3" onclick="buyMulkLevel(3)"><span>🏨 Otel Dik!</span><span id="b-prc-3">-</span></button>
+
+
+
+                    <button class="btn-pas-gec" id="passTurnBtn" onclick="mulkPasGec()">Pas Geç ↩</button>
+
+
+
+                </div>
+
+
+
             </div>
-            <div class="owned-cities-title">Sahip Olduğun İller</div>
-            <div class="owned-cities-list" id="hud-owned-list"></div>
+
+
+
+
+
+
+
         </div>
 
-        <!-- Takas Paneli -->
-        <div class="trade-panel-box">
-            <div class="trade-title">🤝 Karakterler Arası Takas</div>
-            <div class="trade-label">Takas Yapılacak Oyuncu:</div>
-            <select class="trade-select" id="tradeTargetPlayer" onchange="onTradeTargetPlayerChange()"></select>
-            <!-- Diğer takas inputları burada kalabilir -->
-            <button class="btn-trade-submit" onclick="executeRealPlayerTrade()">Takas Teklifi Gönder</button>
-        </div>
 
-        <!-- Sıralama -->
-        <div class="leaderboard-panel">
-            <div class="leaderboard-title">📊 Sıralama (Net Servet)</div>
-            <div id="leaderboard-rows"></div>
-        </div>
+
+
+
+
+
+        <div class="side-panel">
+
+
+
+            <div class="info-box" id="game-log">Tur günlükleri burada listelenir...</div>
+
+
+
+            
+
+
+
+            <button class="btn-action" id="payJailBtn">Kefalet Öde (200.000 ₺) 💸</button>
+
+
+
+
+
+
+
+            <!-- HUD KART PANELİ -->
+
+
+
+            <div class="player-card active-turn" id="playerHUDCard">
+
+
+
+                <div class="turn-badge">SIRA SENDE</div>
+
+
+
+                <div class="hud-main-info">
+
+
+
+                    <div class="player-avatar-box" id="hud-avatar"></div>
+
+
+
+                    <div class="player-info-meta">
+
+
+
+                        <strong id="hud-username">Oyuncu</strong>
+
+
+
+                        <div class="player-money" id="my-money">2.000.000 ₺</div>
+
+
+
+                        <div class="player-stats-row">
+
+
+
+                            <span id="stat-properties">🏢 0 mülk</span>
+
+
+
+                            <span id="stat-worth">⭐ 2.0M ₺</span>
+
+
+
+                        </div>
+
+
+
+                        <div id="jail-status" style="color:#e11d48; font-weight:800; display:none; margin-top:2px;">[KAYIP ADADA]</div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+                
+
+
+
+                <div class="owned-cities-title">Sahip Olduğun İller</div>
+
+
+
+                <div class="owned-cities-list" id="hud-owned-list"></div>
+
+
+
+            </div>
+
+
+
+            <div id="championshipModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
+
+    <div style="background:#1e1e2e; color:#fff; padding:25px; border-radius:12px; width:90%; max-width:400px; text-align:center; border:2px solid #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);">
+
+        <h3 style="color:#f59e0b; margin-top:0;">🏆 DÜNYA ŞAMPİYONASI</h3>
+
+        <p style="font-size:14px; color:#a3a3c2;">Bir şehrinizi şampiyona şehri seçerek kirasını 2 katına (x2) çıkarın!</p>
+
+        <div id="championshipCityList" style="max-height:200px; overflow-y:auto; margin:15px 0; display:flex; flex-direction:column; gap:8px;"></div>
+
+        <button onclick="closeChampionshipModal()" style="background:#4b5563; color:#fff; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; width:100%;">Pas Geç</button>
+
     </div>
 
 </div>
+
+
+
+
+
+
+
+            <!-- TAKAS PANELİ -->
+
+
+
+            <!-- TAKAS PANELİ -->
+
+
+
+            <div class="trade-panel-box">
+
+
+
+                <div class="trade-title">🤝 Karakterler Arası Takas</div>
+
+
+
+
+
+                <div class="trade-label">Takas Yapılacak Oyuncu:</div>
+
+
+
+                <select class="trade-select" id="tradeTargetPlayer" onchange="onTradeTargetPlayerChange()"></select>
+
+
+
+
+
+                <div class="trade-label">Senin Vereceğin İl:</div>
+
+
+
+                <select class="trade-select" id="myTradeMulk"></select>
+
+
+
+                
+
+
+
+                <div class="trade-label">Senin Ekleyin Para (₺):</div>
+
+
+
+                <input type="number" class="trade-input" id="myTradeCash" value="0" min="0">
+
+
+
+                
+
+
+
+                <div class="trade-title" style="margin-top:4px; font-size:9px; border:none;">↓↓ TAKAS EDİLECEK RAKİP VARLIĞI ↓↓</div>
+
+
+
+                
+
+
+
+                <div class="trade-label">Rakip Oyuncudan İstenen İl:</div>
+
+
+
+                <select class="trade-select" id="botTradeMulk"></select>
+
+
+
+                
+
+
+
+                <div class="trade-label">Rakip Oyuncudan İstenen Para (₺):</div>
+
+
+
+                <input type="number" class="trade-input" id="botTradeCash" value="0" min="0">
+
+
+
+
+
+
+
+                <button class="btn-trade-submit" onclick="executeRealPlayerTrade()">Takas Teklifi Gönder</button>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <div class="leaderboard-panel">
+
+
+
+                <div class="leaderboard-title">📊 Sıralama (Net Servet)</div>
+
+
+
+                <div id="leaderboard-rows"></div>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <!-- HOVER BİLGI KARTI PANELİ -->
+
+
+
+    <div class="hover-card" id="hoverCard">
+
+
+
+        <div class="hover-card-title" id="hc-title">Şehir</div>
+
+
+
+        <div class="hover-row"><span>Arsa Fiyatı:</span><span id="hc-price">-</span></div>
+
+
+
+        <div class="hover-row"><span>Mevcut Kira:</span><span id="hc-rent">-</span></div>
+
+
+
+        <div class="hover-row"><span>Bina Seviye:</span><span id="hc-level">-</span></div>
+
+
+
+        <div class="hover-row" style="margin-top:4px; border-top:1px dashed #555; padding-top:2px;"><span>Sahibi:</span><span id="hc-owner" style="color:#ff9f43;">Yok</span></div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <div class="floating-cash" id="cashAnim"></div>
+
 
 
 
