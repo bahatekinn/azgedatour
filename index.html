@@ -3028,11 +3028,14 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
             });
         }
 
-        function refreshTradeSelectBoxes() {
-          if (!document.getElementById('myTradeMulk')) return;
-            myTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
-            botTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
+       function refreshTradeSelectBoxes() {
+        const myTradeMulk = document.getElementById('myTradeMulk');
+        const botTradeMulk = document.getElementById('botTradeMulk');
 
+        if (!myTradeMulk || !botTradeMulk) return;
+
+        myTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
+        botTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
             // Kendi mülklerimizi dolduruyoruz
             Object.keys(benimMulklerim).forEach(id => {
                 myTradeMulk.innerHTML += `<option value="${id}">${haritaDizisi[id].ad}</option>`;
