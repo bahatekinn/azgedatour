@@ -2390,12 +2390,12 @@ startMatchBtn.onclick = () => {
 
 
 
-                    pos: (typeof benimKarakter !== 'undefined' ? benimKarakter.pos : 0),
+                    pos: (typeof benimKarakter !== 'undefined' ? benimKarakter.pos : 0), 
 
 
 
-                   avatar: window.OYUN_DATA.secilenAvatar
-
+                  
+                    avatar: (window.OYUN_DATA && window.OYUN_DATA.secilenAvatar) ? window.OYUN_DATA.secilenAvatar : '/public/avatarlar/avatar1.jpg'
 
 
                 }];
