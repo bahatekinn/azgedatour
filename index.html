@@ -249,7 +249,7 @@
 /* board sınıfını bu şekilde güncelle */
 .board { 
     display: grid; 
-    grid-template-columns: repeat(9, 1fr); /* '84px' yerine '1fr' kullan ki genişliğe göre otursun */
+    grid-template-columns: repeat(9, 1fr); 
     grid-template-rows: repeat(9, 1fr); 
     gap: 5px; 
     background: #040406; 
@@ -257,10 +257,11 @@
     border-radius: 20px; 
     position: relative; 
     border: 1px solid rgba(255,255,255,0.03); 
-    margin: 0 auto;
-    width: 100%; /* Genişliği sabitle */
-    max-width: 800px; /* Çok açılmasın */
+    margin: 0 auto; 
+    width: 100%; 
+    max-width: 800px;
 }
+
 
 
         
@@ -2152,19 +2153,22 @@ startMatchBtn.onclick = () => {
 
 function haritayıUret() {
     const board = document.getElementById('game-board');
-    // Önce piyonlar dahil her şeyi temizle, center-area'yı koru
-    // center-area'yı korumak için onu geçici olarak başka yere alacağız
+    // center-area'yı koru, diğer her şeyi sil
     const centerArea = document.querySelector('.center-area');
     board.innerHTML = ''; 
-    board.appendChild(centerArea); // center-area en başta olmalı!
+    board.appendChild(centerArea); 
 
-    gridHarita.forEach((index, gridIndex) => {
-        if (index !== -1) {
+    gridHarita.forEach((index) => {
+        if (index === -1) {
+            const spacer = document.createElement('div');
+            board.appendChild(spacer);
+        } else {
             const k = haritaDizisi[index];
             const cell = document.createElement('div');
             cell.id = `cell-${k.id}`;
             cell.className = `cell`;
             
+            // Stil eklemeleri
             if(k.type === "special") cell.classList.add("special");
             if(k.type === "resort") cell.classList.add("resort");
             if(k.color) cell.classList.add(`c-${k.color}`);
@@ -2184,17 +2188,8 @@ function haritayıUret() {
             cell.onmouseleave = () => hoverCard.style.display = 'none';
 
             board.appendChild(cell);
-        } else {
-            // -1 olan yerlere boşluk bırak
-            const spacer = document.createElement('div');
-            board.appendChild(spacer);
         }
     });
-
-    // Piyonları çiz
-    setTimeout(() => {
-        if (typeof piyonuCiz === 'function') piyonuCiz(tumOyuncularListesi);
-    }, 200);
 }
 
 
@@ -3168,35 +3163,26 @@ function refreshTradeSelectBoxes() {
 
       // ZAR BUTTONU TETİKLEYİCİSİ
 zarBtn.onclick = () => {
-    if (oyunBittiMi) { showToast("Oyun bitti, daha fazla zar atamazsınız!"); return; }
-    if (dunyaTuruModu) return;
+    // 1. Oyun başlamış mı kontrol et
+    if (mainGameUI.style.display !== 'flex') return;
+    
+    // 2. Zar fonksiyonu kilitli mi?
+    if (zarBtn.disabled) return;
 
-    // 1. Zarı devre dışı bırak
-    zarBtn.disabled = true;
+    socket.emit('zar-at');
+    zarBtn.disabled = true; // Basınca butonu kapat
     d1.classList.add('dice-shake');
     d2.classList.add('dice-shake');
     playSound('dice');
 
-    // 2. Zar karıştırıcıyı başlat
     window.zarKaristirici = setInterval(() => {
         d1.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
         d2.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
     }, 60);
-
-    // 3. SİGORTA: Eğer sunucudan cevap 5 saniyede gelmezse zarı zorla durdur (takılmayı engeller)
-    setTimeout(() => {
-        if (zarBtn.disabled) {
-            console.warn("Sunucudan cevap gelmedi, zar zorla durduruldu.");
-            clearInterval(window.zarKaristirici);
-            zarBtn.disabled = false;
-            d1.classList.remove('dice-shake');
-            d2.classList.remove('dice-shake');
-        }
-    }, 5000);
-
+};
     // 4. İsteği gönder
     socket.emit('zar-at');
-};
+
 
 
 
