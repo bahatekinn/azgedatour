@@ -403,7 +403,14 @@ socket.on('piyon-hareket-etti', (data) => {
     }
 });
 // 3. OYUNCU HAREKET ETTİĞİNDE POZİSYONU GÜNCELLE
+// --- TAKAS SİSTEMİ EKLENTİSİ ---
+    socket.on('takas-teklifi-gonder', (data) => {
+        socket.to(data.aliciId).emit('takas-teklifi-al', data);
+    });
 
+    socket.on('takas-cevabi-ver', (data) => {
+        socket.to(data.gonderenId).emit('takas-sonuc-bilgisi', data);
+    });
 
 
 

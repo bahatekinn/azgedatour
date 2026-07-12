@@ -2894,31 +2894,32 @@ socket.on('zar-sonucu', (data) => {
 
 
         // Odadaki diğer gerçek oyuncuları takas select kutusuna doldurur
-        function updateTradePlayerList() {
-            const playerSelect = document.getElementById('tradeTargetPlayer');
-            if (!playerSelect) return;
-            const currentSelected = playerSelect.value;
-            
-            playerSelect.innerHTML = '<option value="">-- Oyuncu Seçin --</option>';
-            
-            tumOyuncularListesi.forEach(oyuncu => {
-                if (oyuncu.id !== socket.id) {
-                    const selectedAttr = oyuncu.id === currentSelected ? 'selected' : '';
-                    playerSelect.innerHTML += `<option value="${oyuncu.id}" ${selectedAttr}>${oyuncu.nick}</option>`;
-                }
-            });
+       function updateTradePlayerList() {
+    const playerSelect = document.getElementById('tradeTargetPlayer');
+    if (!playerSelect) return;
+    const currentSelected = playerSelect.value;
+    
+    playerSelect.innerHTML = '<option value="">-- Oyuncu Seçin --</option>';
+    
+    tumOyuncularListesi.forEach(oyuncu => {
+        if (oyuncu.id !== socket.id) {
+            const selectedAttr = oyuncu.id === currentSelected ? 'selected' : '';
+            playerSelect.innerHTML += `<option value="${oyuncu.id}" ${selectedAttr}>${oyuncu.nick}</option>`;
         }
+    });
+}
 
 function refreshTradeSelectBoxes() {
     const myTradeMulk = document.getElementById('myTradeMulk');
     const botTradeMulk = document.getElementById('botTradeMulk');
+    const targetPlayerId = document.getElementById('tradeTargetPlayer').value;
 
     if (!myTradeMulk || !botTradeMulk) return;
 
     myTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
     botTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
 
-    // window üzerinden erişiyoruz
+    // 1. Kendi mülklerimi listeye ekle
     if (window.benimMulklerim && Object.keys(window.benimMulklerim).length > 0) {
         Object.keys(window.benimMulklerim).forEach(id => {
             if (haritaDizisi[id]) {
@@ -2927,7 +2928,7 @@ function refreshTradeSelectBoxes() {
         });
     }
 
-    const targetPlayerId = document.getElementById('tradeTargetPlayer') ? document.getElementById('tradeTargetPlayer').value : '';
+    // 2. Rakip oyuncunun mülklerini bul ve listeye ekle
     if (targetPlayerId) {
         haritaDizisi.forEach(kare => {
             if (kare.owner === targetPlayerId && (kare.type === "city" || kare.type === "resort")) {
@@ -2937,40 +2938,45 @@ function refreshTradeSelectBoxes() {
     }
 }
 
-        function onTradeTargetPlayerChange() {
-            refreshTradeSelectBoxes();
-        }
+function onTradeTargetPlayerChange() {
+    refreshTradeSelectBoxes();
+}
 
-        function executeRealPlayerTrade() {
-            const targetPlayerId = document.getElementById('tradeTargetPlayer').value;
-            if (!targetPlayerId) { alert("Lütfen takas yapacağınız oyuncuyu seçin!"); return; }
+function executeRealPlayerTrade() {
+    const targetPlayerId = document.getElementById('tradeTargetPlayer').value;
+    if (!targetPlayerId) { alert("Lütfen takas yapacağınız oyuncuyu seçin!"); return; }
 
-            let myMulkId = myTradeMulk.value;
-            let botMulkId = botTradeMulk.value;
-            let giveCash = parseInt(myTradeCash.value) || 0;
-            let takeCash = parseInt(botTradeCash.value) || 0;
+    const myTradeMulk = document.getElementById('myTradeMulk');
+    const botTradeMulk = document.getElementById('botTradeMulk');
+    const myTradeCash = document.getElementById('myTradeCash');
+    const botTradeCash = document.getElementById('botTradeCash');
 
-            if (giveCash > benimKarakter.money) { alert("Kasanızda teklif ettiğiniz kadar nakit para bulunmuyor!"); return; }
-            if (!myMulkId && giveCash === 0 && !botMulkId && takeCash === 0) { alert("Lütfen takas parametrelerini belirleyin."); return; }
+    let myMulkId = myTradeMulk.value;
+    let botMulkId = botTradeMulk.value;
+    let giveCash = parseInt(myTradeCash.value) || 0;
+    let takeCash = parseInt(botTradeCash.value) || 0;
 
-            const targetPlayer = tumOyuncularListesi.find(o => o.id === targetPlayerId);
-            let onay = confirm(`Bu takas teklifini ${targetPlayer.nick} isimli oyuncuya iletmek istiyor musunuz?`);
-            
-            if (onay) {
-                socket.emit('takas-teklifi-gonder', {
-                    gonderenId: socket.id,
-                    gonderenNick: hudUsername.innerText,
-                    aliciId: targetPlayerId,
-                    myMulkId: myMulkId,
-                    botMulkId: botMulkId,
-                    giveCash: giveCash,
-                    takeCash: takeCash
-                });
-                showToast("🤝 Takas teklifi iletildi, cevap bekleniyor...");
-            }
-        }
+    if (giveCash > benimKarakter.money) { alert("Kasanızda teklif ettiğiniz kadar nakit para bulunmuyor!"); return; }
+    if (!myMulkId && giveCash === 0 && !botMulkId && takeCash === 0) { alert("Lütfen takas parametrelerini belirleyin."); return; }
 
+    const targetPlayer = tumOyuncularListesi.find(o => o.id === targetPlayerId);
+    if (!targetPlayer) { alert("Oyuncu bulunamadı!"); return; }
 
+    let onay = confirm(`Bu takas teklifini ${targetPlayer.nick} isimli oyuncuya iletmek istiyor musunuz?`);
+    
+    if (onay) {
+        socket.emit('takas-teklifi-gonder', {
+            gonderenId: socket.id,
+            gonderenNick: hudUsername.innerText,
+            aliciId: targetPlayerId,
+            myMulkId: myMulkId,
+            botMulkId: botMulkId,
+            giveCash: giveCash,
+            takeCash: takeCash
+        });
+        showToast("🤝 Takas teklifi iletildi, cevap bekleniyor...");
+    }
+}
 
 
 
@@ -3724,59 +3730,96 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 🤝 ÇOKLU OYUNCU TAKAS SİNYAL DİNLEYİCİLERİ
-        socket.on('takas-teklifi-al', (data) => {
-            const verenMulkAd = data.myMulkId ? haritaDizisi[data.myMulkId].ad : "Yok";
-            const istenenMulkAd = data.botMulkId ? haritaDizisi[data.botMulkId].ad : "Yok";
-            
-            let teklifMesaji = `🤝 ${data.gonderenNick} size bir takas teklif ediyor!\n\n`;
-            teklifMesaji += `Ondan Alacağınız İl: ${verenMulkAd}\n`;
-            teklifMesaji += `Ondan Alacağınız Para: ${data.giveCash.toLocaleString()} ₺\n\n`;
-            teklifMesaji += `Sizden İstenen İl: ${istenenMulkAd}\n`;
-            teklifMesaji += `Sizden İstenen Para: ${data.takeCash.toLocaleString()} ₺\n\n`;
-            teklifMesaji += `Bu teklifi kabul ediyor musunuz?`;
+       // 1. TEKLİFİ ALAN KİŞİ (Rakip oyuncunun ekranında çıkan kutu)
+socket.on('takas-teklifi-al', (data) => {
+    const verenMulkAd = data.myMulkId ? haritaDizisi[data.myMulkId].ad : "Yok";
+    const istenenMulkAd = data.botMulkId ? haritaDizisi[data.botMulkId].ad : "Yok";
+    
+    let teklifMesaji = `🤝 ${data.gonderenNick} size bir takas teklif ediyor!\n\n`;
+    teklifMesaji += `Ondan Alacağınız İl: ${verenMulkAd}\n`;
+    teklifMesaji += `Ondan Alacağınız Para: ${data.giveCash.toLocaleString()} ₺\n\n`;
+    teklifMesaji += `Sizden İstenen İl: ${istenenMulkAd}\n`;
+    teklifMesaji += `Sizden İstenen Para: ${data.takeCash.toLocaleString()} ₺\n\n`;
+    teklifMesaji += `Bu teklifi kabul ediyor musunuz?`;
 
-            let cevap = confirm(teklifMesaji);
-            
-            socket.emit('takas-cevabi-ver', {
-                kabulEdildiMi: cevap,
-                gonderenId: data.gonderenId,
-                aliciId: data.aliciId,
-                myMulkId: data.myMulkId,
-                botMulkId: data.botMulkId,
-                giveCash: data.giveCash,
-                takeCash: data.takeCash
-            });
-        });
+    let cevap = confirm(teklifMesaji);
+    
+    socket.emit('takas-cevabi-ver', {
+        status: cevap ? "success" : "rejected", // Sunucunun anlayacağı status parametresi
+        gonderenId: data.gonderenId,
+        aliciId: data.aliciId,
+        myMulkId: data.myMulkId,
+        botMulkId: data.botMulkId,
+        giveCash: data.giveCash,
+        takeCash: data.takeCash
+    });
+});
+
+// 2. TEKLİFİ GÖNDEREN KİŞİ (Cevabı alıp işlemi bitiren blok)
+socket.on('takas-sonuc-bilgisi', (data) => {
+    if (data.status === "success") {
+        if (socket.id === data.gonderenId) {
+            if (data.myMulkId) delete benimMulklerim[data.myMulkId];
+            if (data.botMulkId) benimMulklerim[data.botMulkId] = 0;
+            benimKarakter.money -= data.giveCash;
+            benimKarakter.money += data.takeCash;
+        } else if (socket.id === data.aliciId) {
+            if (data.botMulkId) delete benimMulklerim[data.botMulkId];
+            if (data.myMulkId) benimMulklerim[data.myMulkId] = 0;
+            benimKarakter.money += data.giveCash;
+            benimKarakter.money -= data.takeCash;
+        }
+
+        if (data.myMulkId) haritaDizisi[data.myMulkId].owner = data.aliciId;
+        if (data.botMulkId) haritaDizisi[data.botMulkId].owner = data.gonderenId;
+
+        playSound('money');
+        showToast("🤝 Anlaşma Sağlandı! Takas başarıyla tamamlandı.");
+        socket.emit('para-guncelle', { yeniPara: benimKarakter.money });
+        refreshTradeSelectBoxes();
+        ekranıYenile();
+    } else {
+        showToast("❌ Takas teklifi reddedildi.", "warning");
+    }
+});
 
         socket.on('takas-sonuc-bilgisi', (data) => {
-            if (data.status === "success") {
-                if (socket.id === data.gonderenId) {
-                    if (data.myMulkId) delete benimMulklerim[data.myMulkId];
-                    if (data.botMulkId) benimMulklerim[data.botMulkId] = 0;
-                    benimKarakter.money -= data.giveCash;
-                    benimKarakter.money += data.takeCash;
-                } 
-                else if (socket.id === data.aliciId) {
-                    if (data.botMulkId) delete benimMulklerim[data.botMulkId];
-                    if (data.myMulkId) benimMulklerim[data.myMulkId] = 0;
-                    benimKarakter.money += data.giveCash;
-                    benimKarakter.money -= data.takeCash;
-                }
+    if (data.status === "success") {
+        // 1. Kendi yerel verilerimizi (para ve mülkler) güncelle
+        if (socket.id === data.gonderenId) {
+            if (data.myMulkId) delete benimMulklerim[data.myMulkId];
+            if (data.botMulkId) benimMulklerim[data.botMulkId] = 0;
+            benimKarakter.money -= data.giveCash;
+            benimKarakter.money += data.takeCash;
+        } else if (socket.id === data.aliciId) {
+            if (data.botMulkId) delete benimMulklerim[data.botMulkId];
+            if (data.myMulkId) benimMulklerim[data.myMulkId] = 0;
+            benimKarakter.money += data.giveCash;
+            benimKarakter.money -= data.takeCash;
+        }
 
-                if (data.myMulkId) haritaDizisi[data.myMulkId].owner = data.aliciId;
-                if (data.botMulkId) haritaDizisi[data.botMulkId].owner = data.gonderenId;
+        // 2. Harita üzerindeki "owner" bilgisini güncelle
+        if (data.myMulkId) haritaDizisi[data.myMulkId].owner = data.aliciId;
+        if (data.botMulkId) haritaDizisi[data.botMulkId].owner = data.gonderenId;
 
-                playSound('money');
-                showToast("🤝 Anlaşma Sağlandı! Takas başarıyla tamamlandı.");
-                
-                socket.emit('para-guncelle', { yeniPara: benimKarakter.money });
-                
-                refreshTradeSelectBoxes();
-                ekranıYenile();
-            } else {
-                showToast("❌ Takas teklifi reddedildi.", "warning");
-            }
+        // 3. KRİTİK: Bu değişikliği sunucu üzerinden diğerlerine bildir
+        socket.emit('mulk-islem', { 
+            mesaj: "Takas tamamlandı, mülkler el değiştirdi.",
+            guncelMulkler: haritaDizisi 
         });
+
+        playSound('money');
+        showToast("🤝 Anlaşma Sağlandı! Takas başarıyla tamamlandı.");
+        
+        // Sunucuya yeni bakiye bilgisini yolla
+        socket.emit('para-guncelle', { yeniPara: benimKarakter.money });
+        
+        refreshTradeSelectBoxes();
+        ekranıYenile();
+    } else {
+        showToast("❌ Takas teklifi reddedildi.", "warning");
+    }
+});
 
 
     </script>
