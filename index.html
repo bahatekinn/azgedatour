@@ -374,67 +374,49 @@
 
 /* TAHTA ORTASI - GÜNCEL VE DÜZGÜN HİZALAMA */
 
-  .center-area { 
+ /* TAHTA ORTASI - GÜNCEL VE DÜZGÜN HİZALAMA */
+.center-area { 
+    grid-column: 2 / 9; 
+    grid-row: 2 / 9; 
+    background-color: #0c0e14;
+    /* Yolu kesinleştiriyoruz */
+    background-image: url('/public/avatarlar/turkiye-harita.png');
+    
+    /* Harita alanı kapsasın */
+    background-size: contain; /* Görselin tamamı görünsün diye 'contain' yaptık */
+    background-repeat: no-repeat;
+    background-position: center;
+    
+    position: relative;
+    z-index: 1; 
+    
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 20px; /* Zar ile buton arasındaki boşluk */
+    border-radius: 20px; 
+    padding: 20px; 
+    overflow: hidden; 
+}
 
-            grid-column: 2 / 9; 
+/* Zar kutusunu haritanın üzerinde belirgin yapalım */
+.center-dice-box { 
+    display: flex; 
+    gap: 20px; /* Zarlar arası boşluk */
+    justify-content: center; 
+    margin-bottom: 0px; /* Gereksiz dev boşluğu sildik */
+    z-index: 500; 
+    background: rgba(0, 0, 0, 0.6); /* Daha belirgin arka plan */
+    padding: 15px 25px; 
+    border-radius: 50px;
+}
 
-            grid-row: 2 / 9; 
-
-            background-color: #0c0e14;
-
-            background-image: url('/avatarlar/turkiye-harita.png');
-
-            /* BURASI ÇOK ÖNEMLİ: Harita alanı kapsasın ama butonları itmesin */
-
-            background-size: cover; 
-
-            background-repeat: no-repeat;
-
-            background-position: center;
-
-            
-
-            /* Butonların üstte kalması için z-index ekliyoruz */
-
-            position: relative;
-
-            z-index: 1; 
-
-            
-
-            display: flex; 
-
-            flex-direction: column; 
-
-            align-items: center; 
-
-            justify-content: center; 
-
-            border-radius: 42px; 
-
-            padding: 40px; 
-
-            overflow: hidden; 
-
-        }
-
-
-
-        /* Zar kutusunu haritanın üzerinde biraz daha belirgin yapalım */
-
-        .center-dice-box { 
-
-            display: flex; gap: 200px; justify-content: center; margin-bottom: 1000000px; 
-
-            z-index: 500; /* Haritanın üzerinde kalması için z-index yüksek olmalı */
-
-            background: rgba(0, 0, 0, 0.4); /* Butonun arkasına hafif gölge ekler */
-
-            padding: 10px; border-radius: 320px;
-
-        }
-
-
+/* Zar at butonunu da yukarı çekelim */
+#zarBtn { 
+    z-index: 5; 
+    margin-top: 10px;
+}
 
         /* Zar at butonunu da yukarı çekelim */
 
@@ -2312,12 +2294,22 @@ startMatchBtn.onclick = () => {
 
 function piyonuCiz(tumOyuncular) {
     const board = document.getElementById('game-board');
-    if (!board) return; // Board yoksa piyon da yok
+    if (!board) return; 
 
+    // Tüm piyon kutularını temizle
     document.querySelectorAll('.pawn-container').forEach(c => c.innerHTML = '');
 
     let list = tumOyuncular || tumOyuncularListesi;
     
+    // Eğer liste yoksa kendi karakterini ekle
+    if (!list || list.length === 0) {
+        list = [{
+            id: socket.id || 'local',
+            pos: (typeof benimKarakter !== 'undefined' ? benimKarakter.pos : 0), 
+            avatar: window.OYUN_DATA.secilenAvatar || '/public/avatarlar/avatar1.jpg'
+        }];
+    }
+
     list.forEach(oyuncu => {
         const container = document.getElementById(`pawn-${oyuncu.pos}`);
         if (container) {
@@ -2327,7 +2319,6 @@ function piyonuCiz(tumOyuncular) {
         }
     });
 }
-
 
 
 
@@ -2466,20 +2457,21 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
 
         // SUNUCUDAN GELEN ZAR SONUCU (ÇOKLU OYUNCU ENTEGRASYONLU)
 
-
 socket.on('zar-sonucu', (data) => {
-    // 1. Önce kesin olarak durdur
+    // ZAR DÖNGÜSÜNÜ KESİN DURDUR
     if (window.zarKaristirici) {
         clearInterval(window.zarKaristirici);
         window.zarKaristirici = null;
     }
-    
+
     d1.classList.remove('dice-shake');
     d2.classList.remove('dice-shake');
     zarBtn.disabled = false;
     
     d1.innerText = zarEmojileri[data.zar1];
     d2.innerText = zarEmojileri[data.zar2];
+    addLog(`Zar Atıldı: [${data.deger}]`);
+   
 
 
 
