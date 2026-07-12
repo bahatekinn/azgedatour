@@ -61,28 +61,31 @@ function odayiGuncelle(odaKodu) {
 
 // Sırayı bir sonraki oyuncuya geçiren yardımcı fonksiyon
 
+// Sırayı bir sonraki oyuncuya geçiren yardımcı fonksiyon (GÜNCEL)
 function sirayiDegistir(odaKodu) {
-
     let oda = odadakiOyuncular[odaKodu];
-
     if (!oda || oda.length === 0) return;
 
-
-
+    // Mevcut oyuncunun indeksini bul
     let currentIndex = oda.findIndex(o => o.id === oda.aktifSiraId);
-
+    
+    // Eğer oyuncu bulunamazsa (hata durumu), sırayı ilk oyuncuya ver
+    if (currentIndex === -1) currentIndex = 0;
+    
     let nextIndex = (currentIndex + 1) % oda.length;
-
-   
-
+    
+    // Sırayı güncelle ve zar hakkını sıfırla
     oda.aktifSiraId = oda[nextIndex].id;
+    oda.zarAttiMi = false; 
 
-    oda.zarAttiMi = false; // Yeni oyuncu için zar atma hakkını sıfırla
-
-
-
-    io.to(odaKodu).emit('sira-guncelle', { aktifSiraId: oda.aktifSiraId });
-
+    // ÖNEMLİ: Tüm odaya yeni sıra bilgisini gönder
+    // Bu mesajı alan istemciler zar butonunu otomatik olarak açıp kapatmalı
+    io.to(odaKodu).emit('sira-guncelle', { 
+        aktifSiraId: oda.aktifSiraId,
+        mesaj: "Sıra değişti" 
+    });
+    
+    console.log(`Oda ${odaKodu}: Sıra ${oda.aktifSiraId} ID'li oyuncuya geçti.`);
 }
 
 
@@ -340,7 +343,17 @@ socket.on('piyon-hareket-etti', (data) => {
 
     // MÜLK, UÇUŞ VE PARA GÜNCELLEMELERİ
 
-    socket.on('mulk-islem', (data) => { if (socket.currentRoom) socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data); });
+    // MÜLK, UÇUŞ VE PARA GÜNCELLEMELERİ
+socket.on('mulk-islem', (data) => {
+    if (socket.currentRoom) {
+        // 1. İşlem bilgisini gönder (Animasyonlar vb. için)
+        socket.to(socket.currentRoom).emit('mulk-islem-bilgisi', data);
+        
+        // 2. ÖNEMLİ: Odadaki tüm oyuncuların güncel durumunu herkese tekrar yolla!
+        // Bu sayede herkesin ekranında mülkler ve para durumu SIFIRLANIR ve eşleşir.
+        io.to(socket.currentRoom).emit('tum-oyuncular-guncellendi', odadakiOyuncular[socket.currentRoom]);
+    }
+});
 
     socket.on('uctu', (data) => { if (socket.currentRoom) socket.to(socket.currentRoom).emit('uctu-bilgisi', data); });
 

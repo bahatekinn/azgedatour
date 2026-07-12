@@ -2707,19 +2707,29 @@ socket.on('zar-sonucu', (data) => {
 
 
 
-        socket.on('tum-oyuncular-guncellendi', (guncelListe) => {
+       socket.on('tum-oyuncular-guncellendi', (guncelListe) => {
+    // 1. Ana veriyi güncelle
+    tumOyuncularListesi = guncelListe;
 
+    // 2. Görsel güncellemeleri tetikle
+    // Piyonların yeni yerlerini haritaya işle
+    if (typeof piyonuCiz === 'function') {
+        piyonuCiz(tumOyuncularListesi);
+    }
 
+    // 3. Sıralama paneli (para durumu) ve mülkleri güncelle
+    // Fonksiyonun var olup olmadığını kontrol ederek hata almanı engelliyoruz
+    if (typeof siralamaPaneliniGuncelle === 'function') {
+        siralamaPaneliniGuncelle(tumOyuncularListesi);
+    }
 
-            tumOyuncularListesi = guncelListe;
-
-
-
-            piyonuCiz(tumOyuncularListesi);
-
-
-
-        });
+    // 4. Mülk sahipliklerini haritada görselleştir
+    if (typeof mulkleriHaritadaGuncelle === 'function') {
+        mulkleriHaritadaGuncelle(tumOyuncularListesi);
+    }
+    
+    console.log("Oyun durumu başarıyla senkronize edildi:", tumOyuncularListesi);
+});
 
 
 
