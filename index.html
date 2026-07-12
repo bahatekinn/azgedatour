@@ -2449,23 +2449,32 @@ socket.on('zar-sonucu', (data) => {
     d1.classList.remove('dice-shake');
     d2.classList.remove('dice-shake');
     
-    // ZAR BUTONUNU İLK AŞAMADA KİLİTLİ TUT (Sıra kontrolüne kadar)
+    // ZAR BUTONUNU KİLİTLİ TUT
     zarBtn.disabled = true; 
     
     d1.innerText = zarEmojileri[data.zar1];
     d2.innerText = zarEmojileri[data.zar2];
     addLog(`Zar Atıldı: [${data.deger}]`);
 
-    // 3. Oyuncuyu bul veya oluştur
+    // 3. Oyuncuyu bul veya oluştur (En başta tanımlandı)
     let yuruyenOyuncuId = data.oyuncuId;
     let hedefOyuncu = tumOyuncularListesi.find(o => o.id === yuruyenOyuncuId);
 
     if (!hedefOyuncu) {
-        hedefOyuncu = { id: yuruyenOyuncuId, pos: 0, avatar: window.OYUN_DATA.secilenAvatar || '/public/avatarlar/avatar1.jpg' };
+        hedefOyuncu = { id: yuruyenOyuncuId, pos: 0, avatar: window.OYUN_DATA?.secilenAvatar || '/public/avatarlar/avatar1.jpg' };
         tumOyuncularListesi.push(hedefOyuncu);
     }
 
-    // 4. SADECE ZARI ATAN OYUNCU İÇİN OYUN MANTIĞI
+    // 4. PİYONU YÜRÜT (Bu kısım artık herkesin ekranında çalışacak)
+    let yeniHedef = (hedefOyuncu.pos + data.deger) % 32;
+    // Eğer piyonu yürüten ana fonksiyonun buysa:
+    if(typeof piyonuYurut === 'function') {
+        piyonuYurut(yuruyenOyuncuId, yeniHedef, () => {
+            console.log("Piyon hareketi tamamlandı.");
+        });
+    }
+
+    // 5. SADECE ZARI ATAN OYUNCU İÇİN ÖZEL MANTIĞI
     if (yuruyenOyuncuId === socket.id) {
         if (benimKarakter.inJail) {
             if (data.cift) {
@@ -2481,7 +2490,7 @@ socket.on('zar-sonucu', (data) => {
                 } else {
                     showToast("❌ Çift gelmedi! Adadasınız."); 
                     ekranıYenile(); 
-                    return; // Zar atıldı ama hareket yok, fonksiyondan çık
+                    return; 
                 }
             }
         } else {
@@ -2502,22 +2511,10 @@ socket.on('zar-sonucu', (data) => {
             }
         }
         
-        // Buraya piyonun yürümesi için gerekli tetikleyiciyi eklemelisin (Örn: piyonuHareketEttir(data.deger))
+        // Hareket sonrası güncel pozisyonu sunucuya bildir
+        socket.emit('piyon-hareket-etti', { yeniPos: yeniHedef });
     } 
-    
-    // NOT: zarBtn'i burada tekrar 'false' YAPMA!
-    // Sıra kontrolünü sunucudan gelen 'sira-guncelle' eventi yapmalı.
 });
-
-
-
-
-
-
-
-            let yeniHedef = (hedefOyuncu.pos + data.deger) % 32;
-
-
 
 
 
