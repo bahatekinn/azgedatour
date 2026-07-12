@@ -382,8 +382,7 @@
 
             background-color: #0c0e14;
 
-            background-image: url('./public/avatarlar/turkiye-harita.png');
-            
+            background-image: url('/avatarlar/turkiye-harita.png');
 
             /* BURASI ÇOK ÖNEMLİ: Harita alanı kapsasın ama butonları itmesin */
 
@@ -1347,7 +1346,9 @@
      
     
     // Avatar değişkenini buraya yukarı taşıyoruz ki her yer görsün
-    let secilenAvatar = '/public/avatarlar/avatar1.jpg';
+   window.OYUN_DATA = {
+    secilenAvatar: './public/avatarlar/avatar1.jpg' // DOĞRU
+};
 
     function toggleMute() {
         // ...
@@ -2154,111 +2155,54 @@ startMatchBtn.onclick = () => {
 
 
 
-        function haritayıUret() {
-
-
-
-            gridHarita.forEach(index => {
-
-
-
-                if (index !== -1) {
-
-
-
-                    const k = haritaDizisi[index];
-
-
-
-                    let cell = document.getElementById(`cell-${k.id}`);
-
-
-
-                    if(!cell) { cell = document.createElement('div'); cell.id = `cell-${k.id}`; board.appendChild(cell); }
-
-
-
-                    cell.className = `cell`;
-
-
-
-                    if(k.type === "special") cell.classList.add("special");
-
-
-
-                    if(k.type === "resort") cell.classList.add("resort");
-
-
-
-                    if(k.color) cell.classList.add(`c-${k.color}`);
-
-
-
-
-
-
-
-                    cell.innerHTML = `
-
-
-
-                        <div class="owner-ribbon" id="ribbon-${k.id}"></div>
-
-
-
-                        <div class="house-row" id="houses-${k.id}"></div>
-
-
-
-                        <div style="margin-top:2px;">${k.ad}</div>
-
-
-
-                        <div class="cell-img">${k.img}</div>
-
-
-
-                    `;
-
-
-
-                    if(k.fiyat) cell.innerHTML += `<div class="price-tag">${k.fiyat.toLocaleString()} ₺</div>`;
-
-
-
-                    cell.innerHTML += `<div class="pawn-container" id="pawn-${k.id}"></div>`;
-
-
-
-                    cell.onclick = () => hucreyeTiklandi(k.id);
-
-
-
-
-
-
-
-                    cell.onmouseenter = (e) => showHoverCard(e, k.id);
-
-
-
-                    cell.onmousemove = (e) => moveHoverCard(e);
-
-
-
-                    cell.onmouseleave = () => hoverCard.style.display = 'none';
-
-
-
-                }
-
-
-
-            });
-
-
-
+ function haritayıUret() {
+    const board = document.getElementById('game-board');
+    // Önce board'un içeriğini temizle (center-area hariç)
+    // Sadece cell class'ına sahip olanları temizleyelim
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(c => c.remove());
+
+    gridHarita.forEach((index, gridIndex) => {
+        if (index !== -1) {
+            const k = haritaDizisi[index];
+            const cell = document.createElement('div');
+            cell.id = `cell-${k.id}`;
+            cell.className = `cell`;
+            
+            // Stil eklemeleri
+            if(k.type === "special") cell.classList.add("special");
+            if(k.type === "resort") cell.classList.add("resort");
+            if(k.color) cell.classList.add(`c-${k.color}`);
+
+            cell.innerHTML = `
+                <div class="owner-ribbon" id="ribbon-${k.id}"></div>
+                <div class="house-row" id="houses-${k.id}"></div>
+                <div style="margin-top:2px; pointer-events: none;">${k.ad}</div>
+                <div class="cell-img" style="pointer-events: none;">${k.img}</div>
+                ${k.fiyat ? `<div class="price-tag">${k.fiyat.toLocaleString()} ₺</div>` : ''}
+                <div class="pawn-container" id="pawn-${k.id}"></div>
+            `;
+
+            cell.onclick = () => hucreyeTiklandi(k.id);
+            cell.onmouseenter = (e) => showHoverCard(e, k.id);
+            cell.onmousemove = (e) => moveHoverCard(e);
+            cell.onmouseleave = () => hoverCard.style.display = 'none';
+
+            board.appendChild(cell);
+        } else {
+            // Haritanın ortasındaki boşluk için bir dummy div (yapıyı bozmasın diye)
+            const emptyCell = document.createElement('div');
+            board.appendChild(emptyCell);
         }
+    });
+
+    // Piyonları harita oluştuktan hemen sonra çizdir
+    setTimeout(() => {
+        if (typeof piyonuCiz === 'function') {
+            piyonuCiz(tumOyuncularListesi);
+        }
+    }, 100);
+}
 
 
 
@@ -2366,49 +2310,23 @@ startMatchBtn.onclick = () => {
 
 
 
-        function piyonuCiz(tumOyuncular) {
+function piyonuCiz(tumOyuncular) {
+    const board = document.getElementById('game-board');
+    if (!board) return; // Board yoksa piyon da yok
 
+    document.querySelectorAll('.pawn-container').forEach(c => c.innerHTML = '');
 
-
-            document.querySelectorAll('.pawn-container').forEach(c => c.innerHTML = '');
-
-
-
-
-
-
-
-            let list = tumOyuncular || tumOyuncularListesi;
-
-
-
-            if (!list || list.length === 0) {
-
-
-
-                list = [{
-
-
-
-                    id: socket.id || 'local',
-
-
-
-                    pos: (typeof benimKarakter !== 'undefined' ? benimKarakter.pos : 0), 
-
-
-
-                  
-                    avatar: (window.OYUN_DATA && window.OYUN_DATA.secilenAvatar) ? window.OYUN_DATA.secilenAvatar : '/public/avatarlar/avatar1.jpg'
-
-
-                }];
-
-
-
-            }
-
-
+    let list = tumOyuncular || tumOyuncularListesi;
+    
+    list.forEach(oyuncu => {
+        const container = document.getElementById(`pawn-${oyuncu.pos}`);
+        if (container) {
+            container.innerHTML += `
+                <div class="pawn-dot" style="background-image: url('${oyuncu.avatar}'); border: 2px solid ${oyuncu.id === socket.id ? '#ff9f43' : '#fff'}; width: 22px; height: 22px;"></div>
+            `;
+        }
+    });
+}
 
 
 
@@ -2446,7 +2364,7 @@ startMatchBtn.onclick = () => {
 
 
 
-        }
+        
 
 
 
@@ -2549,24 +2467,19 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
         // SUNUCUDAN GELEN ZAR SONUCU (ÇOKLU OYUNCU ENTEGRASYONLU)
 
 
-
-        socket.on('zar-sonucu', (data) => {
-
-
-
-            clearInterval(window.zarKaristirici);
-
-
-
-            
-
-
-
-            d1.classList.remove('dice-shake');
-
-
-
-            d2.classList.remove('dice-shake');
+socket.on('zar-sonucu', (data) => {
+    // 1. Önce kesin olarak durdur
+    if (window.zarKaristirici) {
+        clearInterval(window.zarKaristirici);
+        window.zarKaristirici = null;
+    }
+    
+    d1.classList.remove('dice-shake');
+    d2.classList.remove('dice-shake');
+    zarBtn.disabled = false;
+    
+    d1.innerText = zarEmojileri[data.zar1];
+    d2.innerText = zarEmojileri[data.zar2];
 
 
 
@@ -2614,8 +2527,7 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
 
 
 
-                hedefOyuncu = { id: yuruyenOyuncuId, pos: 0, avatar: seciLenAvatar };
-
+                hedefOyuncu = { id: yuruyenOyuncuId, pos: 0, avatar: window.OYUN_DATA.secilenAvatar || '/public/avatarlar/avatar1.jpg' };
 
 
                 tumOyuncularListesi.push(hedefOyuncu);
@@ -3774,7 +3686,7 @@ function refreshTradeSelectBoxes() {
 
 
 
-            seciLenAvatar = imgPath;
+            window.OYUN_DATA.secilenAvatar = imgPath;
 
 
 
