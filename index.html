@@ -1937,8 +1937,7 @@ const haritaDizisi = [
 ];
 
 
-
-        let benimKarakter = { pos: 0, money: 2000000, inJail: false, jailTurns: 0, hasJailCard: false };
+        window.benimKarakter = { pos: 0, money: 2000000, inJail: false, jailTurns: 0, hasJailCard: false };
 
       
         window.benimMulklerim = {};
@@ -2132,10 +2131,10 @@ startMatchBtn.onclick = () => {
     socket.emit('oda-degis', odaKodu);
     socket.emit('yeni-oyuncu-katildi', {
         nick: nick, 
-        avatar: seciLenAvatar
+       avatar: window.OYUN_DATA.secilenAvatar
     });
     
-    hudAvatar.style.backgroundImage = `url('${seciLenAvatar}')`;
+   hudAvatar.style.backgroundImage = `url('${window.OYUN_DATA.secilenAvatar}')`;
     hudUsername.innerText = nick;
     
     haritayıUret(); 
@@ -2839,27 +2838,19 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
 
 
 
-        function ekranıYenile() {
+      function ekranıYenile() {
+    // Eğer değişkenler henüz oluşmadıysa fonksiyonu durdur
+    if (typeof window.benimKarakter === 'undefined' || typeof window.benimMulklerim === 'undefined') return;
+
+    myMoneyText.innerText = `${window.benimKarakter.money.toLocaleString()} ₺`;
+    jailStatusText.style.display = window.benimKarakter.inJail ? 'block' : 'none';
+
+    let mCount = Object.keys(window.benimMulklerim).length;
+    statProperties.innerText = `🏢 ${mCount} mülk`;
 
 
 
-            myMoneyText.innerText = `${benimKarakter.money.toLocaleString()} ₺`;
-
-
-
-            jailStatusText.style.display = benimKarakter.inJail ? 'block' : 'none';
-
-
-
-
-
-
-
-            let mCount = Object.keys(benimMulklerim).length;
-
-
-
-            statProperties.innerText = `🏢 ${mCount} mülk`;
+            
 
 
 
