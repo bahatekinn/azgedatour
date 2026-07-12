@@ -1344,16 +1344,14 @@
 
 
 
-        let tumOyuncularListesi = [];
+       let tumOyuncularListesi = [];
 
+    // Avatar değişkenini buraya yukarı taşıyoruz ki her yer görsün
+    let seciLenAvatar = '/public/avatarlar/avatar1.jpg'; 
 
-
-
-
-
-
-        function toggleMute() {
-
+    function toggleMute() {
+        // ...
+    
 
 
             isMuted = !isMuted;
@@ -1953,7 +1951,7 @@ const haritaDizisi = [
 
 
 
-        let seciLenAvatar = '/public/avatarlar/avatar1.jpg';
+        
 
 
 
@@ -3101,6 +3099,7 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
         }
 
         function refreshTradeSelectBoxes() {
+            if (!document.getElementById('myTradeMulk')) return;
             myTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
             botTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
 
