@@ -2437,7 +2437,6 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
 
 
         // SUNUCUDAN GELEN ZAR SONUCU (ÇOKLU OYUNCU ENTEGRASYONLU)
-
 socket.on('zar-sonucu', (data) => {
     // 1. ZAR DÖNGÜSÜNÜ KESİN DURDUR
     if (window.zarKaristirici) {
@@ -2445,36 +2444,43 @@ socket.on('zar-sonucu', (data) => {
         window.zarKaristirici = null;
     }
 
-    // 2. Zar efektlerini kaldır
     d1.classList.remove('dice-shake');
     d2.classList.remove('dice-shake');
-    
-    // ZAR BUTONUNU KİLİTLİ TUT
     zarBtn.disabled = true; 
     
     d1.innerText = zarEmojileri[data.zar1];
     d2.innerText = zarEmojileri[data.zar2];
     addLog(`Zar Atıldı: [${data.deger}]`);
 
-    // 3. Oyuncuyu bul veya oluştur (En başta tanımlandı)
+    // 2. Oyuncuyu bul
     let yuruyenOyuncuId = data.oyuncuId;
     let hedefOyuncu = tumOyuncularListesi.find(o => o.id === yuruyenOyuncuId);
-
     if (!hedefOyuncu) {
-        hedefOyuncu = { id: yuruyenOyuncuId, pos: 0, avatar: window.OYUN_DATA?.secilenAvatar || '/public/avatarlar/avatar1.jpg' };
+        hedefOyuncu = { id: yuruyenOyuncuId, pos: 0, avatar: '/public/avatarlar/avatar1.jpg' };
         tumOyuncularListesi.push(hedefOyuncu);
     }
 
-    // 4. PİYONU YÜRÜT (Bu kısım artık herkesin ekranında çalışacak)
+    // 3. PİYONU YÜRÜT
     let yeniHedef = (hedefOyuncu.pos + data.deger) % 32;
-    // Eğer piyonu yürüten ana fonksiyonun buysa:
-    if(typeof piyonuYurut === 'function') {
-        piyonuYurut(yuruyenOyuncuId, yeniHedef, () => {
-            console.log("Piyon hareketi tamamlandı.");
-        });
-    }
 
-    // 5. SADECE ZARI ATAN OYUNCU İÇİN ÖZEL MANTIĞI
+    piyonuYurut(yuruyenOyuncuId, yeniHedef, () => {
+        hedefOyuncu.pos = yeniHedef;
+        
+        // Sadece zar atan oyuncunun oyun mantığını çalıştır
+        if (yuruyenOyuncuId === socket.id) {
+            benimKarakter.pos = yeniHedef;
+            addLog(`${haritaDizisi[yeniHedef]?.ad || "Bilinmeyen"} konumuna varıldı.`);
+            
+            if(haritaDizisi[yeniHedef]?.color === "chance") { 
+                tetikleSansKarti(); 
+            } else { 
+                aksiyonHesapla(yeniHedef, data.cift); 
+            }
+        }
+        ekranıYenile();
+    });
+
+    // 4. HAPİS VE ÖZEL DURUM MANTIĞI
     if (yuruyenOyuncuId === socket.id) {
         if (benimKarakter.inJail) {
             if (data.cift) {
@@ -2489,7 +2495,6 @@ socket.on('zar-sonucu', (data) => {
                     showToast("🔓 3 tur doldu, adadan serbest kaldınız.");
                 } else {
                     showToast("❌ Çift gelmedi! Adadasınız."); 
-                    ekranıYenile(); 
                     return; 
                 }
             }
@@ -2502,86 +2507,13 @@ socket.on('zar-sonucu', (data) => {
                     benimKarakter.inJail = true;
                     showToast("🚨 3 Kez Çift Zar! Kayıp Ada'ya düştünüz.");
                     socket.emit('piyon-hareket-etti', { yeniPos: 8 });
-                    piyonuCiz(tumOyuncularListesi); 
-                    ekranıYenile(); 
                     return;
                 }
-            } else { 
-                ciftZarSayaci = 0; 
-            }
+            } else { ciftZarSayaci = 0; }
         }
-        
-        // Hareket sonrası güncel pozisyonu sunucuya bildir
         socket.emit('piyon-hareket-etti', { yeniPos: yeniHedef });
     } 
 });
-
-
-
-
-
-            // Piyonu kim attıysa onun piyonunu kare kare yürüt
-
-
-
-            piyonuYurut(yuruyenOyuncuId, yeniHedef, () => {
-
-
-
-                hedefOyuncu.pos = yeniHedef;
-
-
-
-
-
-
-
-                if (yuruyenOyuncuId === socket.id) {
-
-
-
-                    benimKarakter.pos = yeniHedef;
-
-
-
-                    addLog(`${haritaDizisi[yeniHedef].ad} konumuna varıldı.`);
-
-
-
-                    if(haritaDizisi[yeniHedef].color === "chance") { 
-
-
-
-                        tetikleSansKarti(); 
-
-
-
-                    } else { 
-
-
-
-                        aksiyonHesapla(yeniHedef, data.cift); 
-
-
-
-                    }
-
-
-
-                }
-
-
-
-                ekranıYenile();
-
-
-
-            });
-
-
-
-    
-
 
 
 
