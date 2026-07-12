@@ -226,23 +226,26 @@ io.on('connection', (socket) => {
 
     // 3. OYUNCU HAREKET ETTİĞİNDE POZİSYONU GÜNCELLE
 
-    socket.on('piyon-hareket-etti', (data) => {
-
-        const oda = socket.currentRoom;
-
-        if (oda && odadakiOyuncular[oda]) {
-
-            let oyuncu = odadakiOyuncular[oda].find(o => o.id === socket.id);
-
-            if (oyuncu) oyuncu.pos = data.yeniPos;
-
-           
-
+   // 3. OYUNCU HAREKET ETTİĞİNDE POZİSYONU GÜNCELLE
+socket.on('piyon-hareket-etti', (data) => {
+    const oda = socket.currentRoom;
+    if (oda && odadakiOyuncular[oda]) {
+        let oyuncu = odadakiOyuncular[oda].find(o => o.id === socket.id);
+        
+        if (oyuncu) {
+            // Oyuncunun pozisyonunu sunucu tarafında da güncelliyoruz
+            oyuncu.pos = data.yeniPos;
+            
+            // Hareket bilgisini odadaki TÜM oyunculara (kendisi dahil) iletiyoruz.
+            // Bu sayede diğer oyuncuların ekranında piyonun yeri anlık güncellenir.
             io.to(oda).emit('tum-oyuncular-guncellendi', odadakiOyuncular[oda]);
-
+            
+            // Eğer piyon yeni bir kareye girdiyse, burada ekstra sunucu taraflı 
+            // kontrol (örneğin mülk satın alma durumu) yapman gerekirse 
+            // bu blok içinde tetikleyebilirsin.
         }
-
-    });
+    }
+});
 
 
 
@@ -387,28 +390,20 @@ io.on('connection', (socket) => {
    
 
     // Para güncellendiğinde sıralama panelinde de paralar anlık değişsin diye sunucuda da parayı tutuyoruz
-
     socket.on('para-guncelle', (data) => {
-
-        const oda = socket.currentRoom;
-
-        if (oda && odadakiOyuncular[oda]) {
-
-            let oyuncu = odadakiOyuncular[oda].find(o => o.id === socket.id);
-
-            if (oyuncu && data.yeniPara !== undefined) {
-
-                oyuncu.money = data.yeniPara;
-
-            }
-
-            socket.to(oda).emit('para-guncelle-bilgisi', data);
-
-            odayiGuncelle(oda); // Sıralama tablosunu anlık yeniletir
-
+    const oda = socket.currentRoom;
+    if (oda && odadakiOyuncular[oda]) {
+        let oyuncu = odadakiOyuncular[oda].find(o => o.id === socket.id);
+        if (oyuncu && data.yeniPara !== undefined) {
+            oyuncu.money = data.yeniPara;
         }
+        // Diğer oyunculara kimin parasının değiştiğini bildiriyoruz
+        socket.to(oda).emit('para-guncelle-bilgisi', { id: socket.id, yeniPara: data.yeniPara });
+        odayiGuncelle(oda); 
+    }
+});
+// 3. OYUNCU HAREKET ETTİĞİNDE POZİSYONU GÜNCELLE
 
-    });
 
 
 

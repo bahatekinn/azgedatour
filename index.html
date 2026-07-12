@@ -2400,77 +2400,47 @@ function piyonuCiz(tumOyuncular) {
 
 
 function piyonuYurut(oyuncuId, hedefPos, callback) {
-
     let oyuncu = tumOyuncularListesi.find(o => o.id === oyuncuId);
-
     if (!oyuncu) { console.error("Oyuncu bulunamadı:", oyuncuId); return; }
 
-
+    // Eğer zaten hedefteyse direkt callback'i çalıştır ve çık
+    if (parseInt(oyuncu.pos) === parseInt(hedefPos)) {
+        if (callback) callback();
+        return;
+    }
 
     if (window.moveInterval) clearInterval(window.moveInterval);
 
-
-
     window.moveInterval = setInterval(() => {
+        // Pozisyonu güncelle
+        oyuncu.pos = (parseInt(oyuncu.pos) + 1) % 32;
 
-        if (oyuncu.pos === hedefPos) {
-
-            clearInterval(window.moveInterval);
-
-            if (callback) callback();
-
-            return;
-
-        }
-
-        
-
-        oyuncu.pos = (oyuncu.pos + 1) % 32;
-
-        
-
-        // BAŞLANGIÇ NOKTASINDAN GEÇİŞ KONTROLÜ (Sağ Alt Köşe: id 0)
-
-        if (oyuncu.pos === 0) {
-
-            // Eğer başlangıçtan geçen oyuncu BENSEM cüzdanıma para ekle
-
-            if (oyuncuId === socket.id) {
-
-                benimKarakter.money += 200000; // Kasaya 200k ekle
-
-                playSound('money');
-
-                triggerCashAnim("+200.000 ₺ Maaş", "#16a34a");
-
-                showToast("🏁 Başlangıç noktasından geçtiniz, 200.000 ₺ maaş aldınız!");
-
-                
-
-                // Sıralama tablosunun anlık güncellenmesi için yeni parayı sunucuya fırlat
-
-                socket.emit('para-guncelle', { yeniPara: benimKarakter.money });
-
-            }
-
-        }
-
-        
-
-        if(oyuncuId === socket.id) {
-
-            socket.emit('piyon-hareket-etti', { yeniPos: oyuncu.pos });
-
-        }
-
-
-
-        piyonuCiz(tumOyuncularListesi); 
-
+        // Ekrana çiz
+        piyonuCiz(tumOyuncularListesi);
         playSound('dice');
 
-    }, 220); // Ayarladığın o hızlı ve akıcı tempo hızı
+        // BAŞLANGIÇ NOKTASI (0) KONTROLÜ
+        if (oyuncu.pos === 0 && oyuncuId === socket.id) {
+            benimKarakter.money += 200000;
+            playSound('money');
+            triggerCashAnim("+200.000 ₺ Maaş", "#16a34a");
+            showToast("🏁 Başlangıç noktasından geçtiniz, 200.000 ₺ maaş aldınız!");
+            socket.emit('para-guncelle', { yeniPara: benimKarakter.money });
+        }
 
+        // Hedefe ulaştı mı?
+        if (parseInt(oyuncu.pos) === parseInt(hedefPos)) {
+            clearInterval(window.moveInterval);
+            window.moveInterval = null;
+
+            // Hareket bitince sunucuya son konumu bir kez bildir
+            if (oyuncuId === socket.id) {
+                socket.emit('piyon-hareket-etti', { yeniPos: oyuncu.pos });
+            }
+
+            if (callback) callback();
+        }
+    }, 220);
 }
 
     
