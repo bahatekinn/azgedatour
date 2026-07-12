@@ -121,7 +121,7 @@ io.on('connection', (socket) => {
         if (socket.currentRoom) io.to(socket.currentRoom).emit('mesaj-al', data);
     });
 
-    // ZAR (Sıra tabanlı kontrol entegreli)
+    // ZAR (Sıra tabanlı ve Ağırlıklandırılmış Özel Zar Olasılığı)
     socket.on('zar-at', () => {
         const oda = socket.currentRoom;
         if (oda && odadakiOyuncular[oda]) {
@@ -132,8 +132,23 @@ io.on('connection', (socket) => {
 
             odadakiOyuncular[oda].zarAttiMi = true; // Oyuncu zar hakkını kullandı
 
-            const zar1 = Math.floor(Math.random() * 6) + 1;
-            const zar2 = Math.floor(Math.random() * 6) + 1;
+            // --- STRATEJİK AĞIRLIKLI ZAR MOTORU ---
+            // Havuzda 100 adet eleman var.
+            // 10 adet 6 (%10 ihtimal)
+            // 25 adet 5 (%25 ihtimal)
+            // Geriye kalan 65 slot ise 1, 2, 3 ve 4 sayılarına dengeli dağıtıldı.
+            const zarHavuzu = [
+                6,6,6,6,6,6,6,6,6,6, 
+                5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+                1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+                2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+                3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+                4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
+            ];
+
+            // Havuzun içerisinden tamamen rastgele birer sayı seçtiriyoruz
+            const zar1 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
+            const zar2 = zarHavuzu[Math.floor(Math.random() * zarHavuzu.length)];
             const cift = (zar1 === zar2);
             
             io.to(oda).emit('zar-sonucu', { 
