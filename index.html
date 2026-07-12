@@ -1344,10 +1344,11 @@
 
 
 
-       let tumOyuncularListesi = [];
-
+      let tumOyuncularListesi = [];
+     
+    
     // Avatar değişkenini buraya yukarı taşıyoruz ki her yer görsün
-    let seciLenAvatar = '/public/avatarlar/avatar1.jpg'; 
+    let secilenAvatar = '/public/avatarlar/avatar1.jpg';
 
     function toggleMute() {
         // ...
@@ -3029,33 +3030,35 @@ function piyonuYurut(oyuncuId, hedefPos, callback) {
         }
 
        
-      function refreshTradeSelectBoxes() {
+ function refreshTradeSelectBoxes() {
     const myTradeMulk = document.getElementById('myTradeMulk');
     const botTradeMulk = document.getElementById('botTradeMulk');
-    
-    // Değişkeni fonksiyonun içinde garantile
-    if (typeof benimMulklerim === 'undefined') return; 
-    
-    if (!myTradeMulk || !botTradeMulk) return;
-    
-    myTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
-    // ... gerisi aynı ...
-        botTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
-            // Kendi mülklerimizi dolduruyoruz
-            Object.keys(benimMulklerim).forEach(id => {
-                myTradeMulk.innerHTML += `<option value="${id}">${haritaDizisi[id].ad}</option>`;
-            });
 
-            // Seçilen rakip oyuncunun mülklerini haritadan dinamik bulup yüklüyoruz kanka
-            const targetPlayerId = document.getElementById('tradeTargetPlayer') ? document.getElementById('tradeTargetPlayer').value : '';
-            if (targetPlayerId) {
-                haritaDizisi.forEach(kare => {
-                    if (kare.owner === targetPlayerId && (kare.type === "city" || kare.type === "resort")) {
-                        botTradeMulk.innerHTML += `<option value="${kare.id}">${kare.ad}</option>`;
-                    }
-                });
+    // Eğer DOM'da kutular yoksa, daha oyun başlamamıştır, hata vermeden çık
+    if (!myTradeMulk || !botTradeMulk) return;
+
+    myTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
+    botTradeMulk.innerHTML = '<option value="">-- Boş / Yok --</option>';
+
+    // Eğer mülk listesi değişkeni tanımlıysa ve içi doluysa doldur
+    if (typeof benimMulklerim !== 'undefined' && benimMulklerim && Object.keys(benimMulklerim).length > 0) {
+        Object.keys(benimMulklerim).forEach(id => {
+            if (haritaDizisi[id]) {
+                myTradeMulk.innerHTML += `<option value="${id}">${haritaDizisi[id].ad}</option>`;
             }
-        }
+        });
+    }
+
+    // Seçilen rakip oyuncunun mülklerini bulma kısmı
+    const targetPlayerId = document.getElementById('tradeTargetPlayer') ? document.getElementById('tradeTargetPlayer').value : '';
+    if (targetPlayerId) {
+        haritaDizisi.forEach(kare => {
+            if (kare.owner === targetPlayerId && (kare.type === "city" || kare.type === "resort")) {
+                botTradeMulk.innerHTML += `<option value="${kare.id}">${kare.ad}</option>`;
+            }
+        });
+    }
+}
 
         function onTradeTargetPlayerChange() {
             refreshTradeSelectBoxes();
