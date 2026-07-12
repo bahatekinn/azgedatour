@@ -2113,105 +2113,35 @@ const haritaDizisi = [
 
 
 
-        startMatchBtn.onclick = () => {
-
-
-
-            let nick = usernameInput.value.trim();
-
-
-
-            let odaKodu = document.getElementById('roomInput').value.trim(); 
-
-
-
-            
-
-
-
-            if(!nick) nick = `Oyuncu_${Math.floor(Math.random()*100)}`;
-
-
-
-            if(!odaKodu) odaKodu = "genel"; 
-
-
-
-
-
-
-
-            // ÖNCE ODA DEĞİŞTİR, SONRA KATIL (Senkronizasyon için çok önemli)
-
-
-
-            socket.emit('oda-degis', odaKodu);
-
-
-
-            socket.emit('yeni-oyuncu-katildi', {
-
-
-
-                nick: nick, 
-
-
-
-                avatar: seciLenAvatar
-
-
-
-            });
-
-
-
-            
-
-
-
-            hudAvatar.style.backgroundImage = `url('${seciLenAvatar}')`;
-
-
-
-            hudUsername.innerText = nick;
-
-
-
-            lobbyContainer.style.display = 'none'; 
-
-
-
-            mainGameUI.style.display = 'flex'; 
-
-
-
-            topStatusBar.style.display = 'flex';
-
-
-
-            
-
-
-
-            haritayıUret(); 
-
-            piyonuCiz(); 
-
-
-
-            refreshTradeSelectBoxes(); 
-
-
-
-            ekranıYenile(); 
-
-
-
-            initParticles();
-
-
-
-        };
+startMatchBtn.onclick = () => {
+    let nick = usernameInput.value.trim();
+    let odaKodu = document.getElementById('roomInput').value.trim(); 
+    
+    if(!nick) nick = `Oyuncu_${Math.floor(Math.random()*100)}`;
+    if(!odaKodu) odaKodu = "genel"; 
+
+    // --- BURAYI DEĞİŞTİRİYORUZ (Arayüzü en başa al) ---
+    lobbyContainer.style.display = 'none'; 
+    mainGameUI.style.display = 'flex'; 
+    topStatusBar.style.display = 'flex';
+    // --------------------------------------------------
+
+    // ÖNCE ODA DEĞİŞTİR, SONRA KATIL (Senkronizasyon için çok önemli)
+    socket.emit('oda-degis', odaKodu);
+    socket.emit('yeni-oyuncu-katildi', {
+        nick: nick, 
+        avatar: seciLenAvatar
+    });
+    
+    hudAvatar.style.backgroundImage = `url('${seciLenAvatar}')`;
+    hudUsername.innerText = nick;
+    
+    haritayıUret(); 
+    piyonuCiz(); 
+    refreshTradeSelectBoxes(); 
+    ekranıYenile(); 
+    initParticles();
+};
 
 
 
