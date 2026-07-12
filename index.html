@@ -249,16 +249,17 @@
 /* CSS kısmına bunu yapıştır */
 .board { 
     display: grid; 
-    grid-template-columns: repeat(9, 1fr); 
-    grid-template-rows: repeat(9, 1fr); 
+    grid-template-columns: repeat(9, 80px); /* 1fr yerine px verip sabitle */
+    grid-template-rows: repeat(9, 80px); 
     gap: 5px; 
     background: #040406; 
     padding: 10px; 
     border-radius: 20px; 
     margin: 0 auto; 
-    width: 100%; 
-    max-width: 800px;
-    height: 800px; /* Kare olması için yükseklik verdik */
+    width: 760px; /* 9*80 + 8*5 = 760px tam kare yapar */
+    height: 760px;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.03);
 }
 
 .center-area {
@@ -2166,15 +2167,16 @@ startMatchBtn.onclick = () => {
 
 function haritayıUret() {
     const board = document.getElementById('game-board');
-    // center-area'yı koru, diğer her şeyi sil
-    const centerArea = document.querySelector('.center-area');
-    board.innerHTML = ''; 
-    board.appendChild(centerArea); 
+    
+    // 1. Önce sadece cell'leri temizleyelim, center-area kalsın
+    const existingCells = board.querySelectorAll('.cell');
+    existingCells.forEach(c => c.remove());
 
+    // 2. gridHarita dizisini dönerken -1 olan yerlere boşluk koy, diğerlerine cell ekle
     gridHarita.forEach((index) => {
         if (index === -1) {
-            const spacer = document.createElement('div');
-            board.appendChild(spacer);
+            // center-area zaten orada olduğu için -1 olanlara bir şey eklemene gerek yok
+            // grid zaten kendi boşluğunu koruyacak.
         } else {
             const k = haritaDizisi[index];
             const cell = document.createElement('div');
@@ -2195,6 +2197,7 @@ function haritayıUret() {
                 <div class="pawn-container" id="pawn-${k.id}"></div>
             `;
 
+            // Olay tanımlamaları
             cell.onclick = () => hucreyeTiklandi(k.id);
             cell.onmouseenter = (e) => showHoverCard(e, k.id);
             cell.onmousemove = (e) => moveHoverCard(e);
