@@ -1,4 +1,4 @@
-const express = require('express');
+   const express = require('express');
 
 const app = express();
 
@@ -88,7 +88,7 @@ function sirayiDegistir(odaKodu) {
     console.log(`Oda ${odaKodu}: Sıra ${oda.aktifSiraId} ID'li oyuncuya geçti.`);
 }
 io.on('connection', (socket) => {
-    console.log('Bir oyuncu bağlandı! ID:', socket.id);
+    console.log('Bir oyuncu bağlandı! ID:', socket.id);});
 
 
 // 1. ODA DEĞİŞTİRME / ODAYA GİRİŞ
@@ -402,9 +402,11 @@ socket.on('mulk-islem', (data) => {
 
 // Render veya yerel port için dinamik port kontrolü
 
-
-; 
-});// <--- BU PARANTEZ EKSİKTİ! Bu, 90. satırdaki 'io.on'u kapatır.
+socket.on('disconnect', () => {
+        // ... (kodların)
+        odayiGuncelle(oda); 
+    });
+; // <--- BU PARANTEZ EKSİKTİ! Bu, 90. satırdaki 'io.on'u kapatır.
 
 // Render veya yerel port için dinamik port kontrolü
 const PORT = process.env.PORT || 3000;
