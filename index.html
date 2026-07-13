@@ -1496,23 +1496,16 @@
         // SUNUCUDAN GELEN SIRA BİLGİSİ
 
 socket.on('sira-guncelle', (data) => {
-
     if (data.aktifSiraId === socket.id) {
-
-        zarBtn.disabled = false; // Sıra bende, butonu aç
-
-        document.getElementById('playerHUDCard').classList.add('active-turn'); // HUD kartına parlama efekti ver
-
+        // SIRA SENDE: Butonu güvenle açabilirsin
+        zarBtn.disabled = false; 
+        document.getElementById('playerHUDCard').classList.add('active-turn'); 
         showToast("🎲 Sıra sende! Zar atabilirsin.");
-
     } else {
-
-        zarBtn.disabled = true; // Sıra başkasında, butonumu kilitle
-
+        // SIRA BAŞKASINDA: Butonu kilitle
+        zarBtn.disabled = true; 
         document.getElementById('playerHUDCard').classList.remove('active-turn');
-
     }
-
 });
 
 
@@ -1674,35 +1667,46 @@ socket.on('sira-guncelle', (data) => {
 
 
 
-        function showToast(message) {
+       // Zar butonu tıklama olayını garantili hale getiren tek blok
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. Elementleri tanımla
+    const zarBtn = document.getElementById('zarBtn');
+    const mainGameUI = document.getElementById('mainGameUI');
+    const d1 = document.getElementById('d1');
+    const d2 = document.getElementById('d2');
 
+    // 2. Zar butonuna tıklama olayını ekle
+    if (zarBtn) {
+        zarBtn.onclick = () => {
+            // Oyun başlamış mı?
+            if (!mainGameUI || mainGameUI.style.display !== 'flex') {
+                showToast("Oyun başlamadı!");
+                return;
+            }
 
+            // Buton kilitli mi? (Sunucu kontrolü dışında ekstra koruma)
+            if (zarBtn.disabled) return;
 
-            const container = document.getElementById('toast-container');
+            // 3. İşlemleri başlat
+            socket.emit('zar-at');
+            zarBtn.disabled = true; // Zar atar atmaz kilitle
+            
+            d1.classList.add('dice-shake');
+            d2.classList.add('dice-shake');
+            playSound('dice');
 
+            // Sadece animasyon süresince dönmesini sağlayan karıştırıcı
+            window.zarKaristirici = setInterval(() => {
+                d1.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
+                d2.innerText = zarEmojileri[Math.floor(Math.random() * 6) + 1];
+            }, 60);
 
-
-            const toast = document.createElement('div');
-
-
-
-            toast.className = 'toast';
-
-
-
-            toast.innerText = message;
-
-
-
-            container.appendChild(toast);
-
-
-
-            setTimeout(() => { toast.remove(); }, 3000);
-
-
-
-        }
+            // SİGORTA ZAMANLAYICISI (setTimeout) BURADAN TAMAMEN KALDIRILDI.
+            // Buton artık sadece 'zar-sonucu' geldiğinde veya 'sira-guncelle' eventi ile yönetilecek.
+        };
+    }
+});
 
 
 
@@ -2446,6 +2450,9 @@ socket.on('zar-sonucu', (data) => {
 
     d1.classList.remove('dice-shake');
     d2.classList.remove('dice-shake');
+    
+    // BUTONU KİLİTLE: Zar sonucu geldiği anda sıra artık başkasınındır veya 
+    // oyuncunun hareket etmesi bekleniyordur. Butonu burada kilitli tutuyoruz.
     zarBtn.disabled = true; 
     
     d1.innerText = zarEmojileri[data.zar1];
@@ -2495,6 +2502,46 @@ socket.on('zar-sonucu', (data) => {
                     showToast("🔓 3 tur doldu, adadan serbest kaldınız.");
                 } else {
                     showToast("❌ Çift gelmedi! Adadasınız."); 
+                    // Burada dönüş yapıyoruz, buton zaten yukarıda disabled = true yapıldı
+                    return; 
+                }
+            }
+        } else {
+            if (data.cift) {
+                ciftZarSayaci++;
+                if (ciftZarSayaci === 3) {
+                    ciftZarSayaci = 0; 
+                    benimKarakter.pos = 8; 
+                    benimKarakter.inJail = true;
+                    showToast("🚨 3 Kez Çift Zar! Kayıp Ada'ya düştünüz.");
+                    socket.emit('piyon-hareket-etti', { yeniPos: 8 });
+                    return;
+                }
+            } else { 
+                ciftZarSayaci = 0; 
+            }
+        }
+        socket.emit('piyon-hareket-etti', { yeniPos: yeniHedef });
+    } 
+    // ÖNEMLİ: Burada butonu asla tekrar 'false' yapma!
+    // Butonun tekrar açılması için sunucunun 'sira-guncelle' göndermesini bekle.
+});
+
+    // 4. HAPİS VE ÖZEL DURUM MANTIĞI
+    if (yuruyenOyuncuId === socket.id) {
+        if (benimKarakter.inJail) {
+            if (data.cift) {
+                benimKarakter.inJail = false; 
+                benimKarakter.jailTurns = 0;
+                showToast("🔓 Çift zar! Kayıp Ada'dan kurtuldunuz.");
+            } else {
+                benimKarakter.jailTurns++;
+                if (benimKarakter.jailTurns >= 3) {
+                    benimKarakter.inJail = false; 
+                    benimKarakter.jailTurns = 0;
+                    showToast("🔓 3 tur doldu, adadan serbest kaldınız.");
+                } else {
+                    showToast("❌ Çift gelmedi! Adadasınız."); 
                     return; 
                 }
             }
@@ -2513,7 +2560,6 @@ socket.on('zar-sonucu', (data) => {
         }
         socket.emit('piyon-hareket-etti', { yeniPos: yeniHedef });
     } 
-});
 
 
 
