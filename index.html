@@ -480,6 +480,7 @@
     cursor: pointer;
     text-transform: uppercase;
     box-shadow: 0 4px 15px rgba(255, 159, 67, 0.4);
+    pointer-events: auto !important; /* <--- BURAYA EKLEDİK */
 }
 
 /* Buton kilitliyken gri görünsün */
@@ -1508,15 +1509,18 @@
 
 // SUNUCUDAN GELEN SIRA BİLGİSİ
 socket.on('sira-guncelle', (data) => {
+    // Sıra bilgisini globalde güncelle
+    window.aktifSiraId = data.aktifSiraId;
+    
     const zarBtn = document.getElementById('zarBtn');
     const playerHUDCard = document.getElementById('playerHUDCard');
 
-    if (data.aktifSiraId === socket.id) {
+    if (window.aktifSiraId === socket.id) {
         // SIRA SENDE
         if (zarBtn) {
             zarBtn.disabled = false;
-            zarBtn.style.opacity = "1"; // Görünürlüğü tam yap
-            zarBtn.style.cursor = "pointer"; // Tıklanabilir olduğunu göster
+            zarBtn.style.opacity = "1";
+            zarBtn.style.cursor = "pointer";
         }
         if (playerHUDCard) playerHUDCard.classList.add('active-turn');
         showToast("🎲 Sıra sende! Zar atabilirsin.");
@@ -1524,13 +1528,12 @@ socket.on('sira-guncelle', (data) => {
         // SIRA BAŞKASINDA
         if (zarBtn) {
             zarBtn.disabled = true;
-            zarBtn.style.opacity = "0.5"; // Devre dışı olduğunu görselleştir
-            zarBtn.style.cursor = "not-allowed"; // Tıklanmaz olduğunu göster
+            zarBtn.style.opacity = "0.5";
+            zarBtn.style.cursor = "not-allowed";
         }
         if (playerHUDCard) playerHUDCard.classList.remove('active-turn');
     }
 });
-
 
 
 
@@ -3652,6 +3655,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 refreshTradeSelectBoxes();
             }
         });
+        // Acil durum: Buton kilitli kaldıysa her 5 saniyede bir kontrol et
+    setInterval(() => {
+        const zarBtn = document.getElementById('zarBtn');
+        if (zarBtn && window.aktifSiraId === socket.id && zarBtn.disabled) {
+            console.log("Acil durum: Buton kilitliydi, açıldı!");
+            zarBtn.disabled = false;
+            zarBtn.style.opacity = "1";
+            zarBtn.style.cursor = "pointer";
+        }
+    }, 5000);
     </script>
 </body>
 </html>
