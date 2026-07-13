@@ -1509,19 +1509,22 @@
 
         // SUNUCUDAN GELEN SIRA BİLGİSİ
 
+// SUNUCUDAN GELEN SIRA BİLGİSİ
 socket.on('sira-guncelle', (data) => {
+    const zarBtn = document.getElementById('zarBtn');
+    const playerHUDCard = document.getElementById('playerHUDCard');
+
     if (data.aktifSiraId === socket.id) {
-        // SIRA SENDE: Butonu güvenle açabilirsin
-        zarBtn.disabled = false; 
-        document.getElementById('playerHUDCard').classList.add('active-turn'); 
+        // SIRA SENDE: Butonu aktif et
+        if (zarBtn) zarBtn.disabled = false;
+        if (playerHUDCard) playerHUDCard.classList.add('active-turn');
         showToast("🎲 Sıra sende! Zar atabilirsin.");
     } else {
-        // SIRA BAŞKASINDA: Butonu kilitle
-        zarBtn.disabled = true; 
-        document.getElementById('playerHUDCard').classList.remove('active-turn');
+        // SIRA BAŞKASINDA: Butonu devre dışı bırak
+        if (zarBtn) zarBtn.disabled = true;
+        if (playerHUDCard) playerHUDCard.classList.remove('active-turn');
     }
 });
-
 
 
 

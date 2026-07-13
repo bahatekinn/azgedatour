@@ -137,17 +137,42 @@ io.on('connection', (socket) => {
         if (socket.currentRoom) io.to(socket.currentRoom).emit('mesaj-al', data);
     });
 
-    socket.on('zar-at', () => {
-        const oda = socket.currentRoom;
-        if (oda && odadakiOyuncular[oda] && odadakiOyuncular[oda].aktifSiraId === socket.id) {
-            odadakiOyuncular[oda].zarAttiMi = true;
-            let zar1 = Math.floor(Math.random() * 6) + 1;
-            let zar2 = Math.floor(Math.random() * 6) + 1;
-            io.to(oda).emit('zar-sonucu', { oyuncuId: socket.id, deger: zar1 + zar2, zar1, zar2, cift: (zar1 === zar2) });
-            if (zar1 !== zar2) setTimeout(() => sirayiDegistir(oda), 2500);
-            else odadakiOyuncular[oda].zarAttiMi = false;
+   socket.on('zar-at', () => {
+    const oda = socket.currentRoom;
+    if (oda && odadakiOyuncular[oda] && odadakiOyuncular[oda].aktifSiraId === socket.id) {
+        
+        // Mükerrer tıklamayı engelle
+        if (odadakiOyuncular[oda].zarAttiMi) return; 
+        
+        odadakiOyuncular[oda].zarAttiMi = true;
+        
+        let zar1 = Math.floor(Math.random() * 6) + 1;
+        let zar2 = Math.floor(Math.random() * 6) + 1;
+        let cift = (zar1 === zar2);
+        
+        // Sonucu herkesle paylaş
+        io.to(oda).emit('zar-sonucu', { 
+            oyuncuId: socket.id, 
+            deger: zar1 + zar2, 
+            zar1, 
+            zar2, 
+            cift: cift 
+        });
+
+        if (!cift) {
+            // Çift değilse 2.5 saniye sonra sırayı değiştir
+            setTimeout(() => {
+                sirayiDegistir(oda);
+            }, 2500);
+        } else {
+            // ÇİFT ZAR GELDİYSE:
+            // 1. Zar atma hakkını sıfırla
+            odadakiOyuncular[oda].zarAttiMi = false;
+            // 2. Oyuncunun butonunu tekrar açması için sinyal gönder
+            io.to(socket.id).emit('sira-guncelle', { aktifSiraId: socket.id });
         }
-    });
+    }
+});
 
     socket.on('sampiyona-ilan-et', (data) => {
         const oda = socket.currentRoom;
