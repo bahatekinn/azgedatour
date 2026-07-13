@@ -62,31 +62,6 @@ function odayiGuncelle(odaKodu) {
 // Sırayı bir sonraki oyuncuya geçiren yardımcı fonksiyon
 
 // Sırayı bir sonraki oyuncuya geçiren yardımcı fonksiyon (GÜNCEL)
-function sirayiDegistir(odaKodu) {
-    let oda = odadakiOyuncular[odaKodu];
-    if (!oda || oda.length === 0) return;
-
-    // Mevcut oyuncunun indeksini bul
-    let currentIndex = oda.findIndex(o => o.id === oda.aktifSiraId);
-    
-    // Eğer oyuncu bulunamazsa (hata durumu), sırayı ilk oyuncuya ver
-    if (currentIndex === -1) currentIndex = 0;
-    
-    let nextIndex = (currentIndex + 1) % oda.length;
-    
-    // Sırayı güncelle ve zar hakkını sıfırla
-    oda.aktifSiraId = oda[nextIndex].id;
-    oda.zarAttiMi = false; 
-
-    // ÖNEMLİ: Tüm odaya yeni sıra bilgisini gönder
-    // Bu mesajı alan istemciler zar butonunu otomatik olarak açıp kapatmalı
-    io.to(odaKodu).emit('sira-guncelle', { 
-        aktifSiraId: oda.aktifSiraId,
-        mesaj: "Sıra değişti" 
-    });
-    
-    console.log(`Oda ${odaKodu}: Sıra ${oda.aktifSiraId} ID'li oyuncuya geçti.`);
-}
 // --- TÜM SOCKET OLAYLARI BU PARANTEZİN İÇİNDE OLMALI ---
 io.on('connection', (socket) => {
     console.log('Bir oyuncu bağlandı! ID:', socket.id);
@@ -103,10 +78,6 @@ io.on('connection', (socket) => {
         }
         socket.join(yeniOda);
         socket.currentRoom = yeniOda;
-        socket.emit('festival-bilgisi', festivaller);
-        if (odadakiOyuncular[yeniOda] && odadakiOyuncular[yeniOda].dunyaSampiyonasiSehirId !== undefined) {
-            socket.emit('sampiyona-guncelle', { sehirId: odadakiOyuncular[yeniOda].dunyaSampiyonasiSehirId });
-        }
     });
 
     socket.on('yeni-oyuncu-katildi', (data) => {
@@ -137,42 +108,23 @@ io.on('connection', (socket) => {
         if (socket.currentRoom) io.to(socket.currentRoom).emit('mesaj-al', data);
     });
 
-   socket.on('zar-at', () => {
-    const oda = socket.currentRoom;
-    if (oda && odadakiOyuncular[oda] && odadakiOyuncular[oda].aktifSiraId === socket.id) {
-        
-        // Mükerrer tıklamayı engelle
-        if (odadakiOyuncular[oda].zarAttiMi) return; 
-        
-        odadakiOyuncular[oda].zarAttiMi = true;
-        
-        let zar1 = Math.floor(Math.random() * 6) + 1;
-        let zar2 = Math.floor(Math.random() * 6) + 1;
-        let cift = (zar1 === zar2);
-        
-        // Sonucu herkesle paylaş
-        io.to(oda).emit('zar-sonucu', { 
-            oyuncuId: socket.id, 
-            deger: zar1 + zar2, 
-            zar1, 
-            zar2, 
-            cift: cift 
-        });
-
-        if (!cift) {
-            // Çift değilse 2.5 saniye sonra sırayı değiştir
-            setTimeout(() => {
-                sirayiDegistir(oda);
-            }, 2500);
-        } else {
-            // ÇİFT ZAR GELDİYSE:
-            // 1. Zar atma hakkını sıfırla
-            odadakiOyuncular[oda].zarAttiMi = false;
-            // 2. Oyuncunun butonunu tekrar açması için sinyal gönder
-            io.to(socket.id).emit('sira-guncelle', { aktifSiraId: socket.id });
+    socket.on('zar-at', () => {
+        const oda = socket.currentRoom;
+        if (oda && odadakiOyuncular[oda] && odadakiOyuncular[oda].aktifSiraId === socket.id) {
+            if (odadakiOyuncular[oda].zarAttiMi) return; 
+            odadakiOyuncular[oda].zarAttiMi = true;
+            let zar1 = Math.floor(Math.random() * 6) + 1;
+            let zar2 = Math.floor(Math.random() * 6) + 1;
+            let cift = (zar1 === zar2);
+            io.to(oda).emit('zar-sonucu', { oyuncuId: socket.id, deger: zar1 + zar2, zar1, zar2, cift: cift });
+            if (!cift) {
+                setTimeout(() => sirayiDegistir(oda), 2500);
+            } else {
+                odadakiOyuncular[oda].zarAttiMi = false;
+                io.to(socket.id).emit('sira-guncelle', { aktifSiraId: socket.id });
+            }
         }
-    }
-});
+    });
 
     socket.on('sampiyona-ilan-et', (data) => {
         const oda = socket.currentRoom;
@@ -208,9 +160,10 @@ io.on('connection', (socket) => {
             if (odadakiOyuncular[oda].aktifSiraId === socket.id) sirayiDegistir(oda);
             odadakiOyuncular[oda] = odadakiOyuncular[oda].filter(o => o.id !== socket.id);
             odayiGuncelle(oda);
-        }
+        } 
     });
-}); // <--- io.on parantezi buraya geldi!
+}); // <--- İŞTE BU PARANTEZ TÜM İŞLEMLERİ KAPATIYOR!
+      
 // Render veya yerel port için dinamik port kontrolü
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
