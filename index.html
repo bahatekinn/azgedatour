@@ -455,38 +455,40 @@
 }
 
 /* Zar at butonunu da yukarı çekelim */
-#zarBtn { 
-    z-index: 5; 
-    margin-top: 10px;
-}
-
-        /* Zar at butonunu da yukarı çekelim */
-
-      /* Zar kutusunu yukarı taşıdık */
+/* Zar kutusunu sabitledik */
 .center-dice-box { 
     display: flex; 
     gap: 30px; 
     justify-content: center; 
-    margin-bottom: 20px; /* 120px'den 20px'e düşürdük */
+    margin-bottom: 20px; 
     z-index: 10; 
 }
 
-/* Butonu garantili olarak görünür yaptık */
+/* Butonu en üst katmana (z-index 1000) aldık ve görünürlüğünü garantiledik */
 #zarBtn { 
-    z-index: 1000 !important; /* En üst katman */
+    z-index: 1000 !important;
     position: relative;
-    display: block;
+    display: block !important;
     margin: 10px auto;
     padding: 15px 30px;
-    background: #ff9f43;
+    background: #ff9f43 !important;
+    color: #0f111a !important;
     border: none;
     border-radius: 8px;
-    font-weight: bold;
+    font-weight: 800;
+    font-size: 16px;
     cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(255, 159, 67, 0.4);
 }
 
-
-
+/* Buton kilitliyken gri görünsün */
+#zarBtn:disabled {
+    background: #4b505c !important;
+    color: #252830 !important;
+    cursor: not-allowed;
+    box-shadow: none !important;
+}
 
         /* BUSINESS TOUR PANELİ */
 
