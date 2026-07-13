@@ -87,86 +87,66 @@ function sirayiDegistir(odaKodu) {
     
     console.log(`Oda ${odaKodu}: Sıra ${oda.aktifSiraId} ID'li oyuncuya geçti.`);
 }
-
-
-
 io.on('connection', (socket) => {
-
     console.log('Bir oyuncu bağlandı! ID:', socket.id);
 
-   
 
-    // 1. ODA DEĞİŞTİRME / ODAYA GİRİŞ (Her şeyden önce bu çalışmalı)
-
+// 1. ODA DEĞİŞTİRME / ODAYA GİRİŞ
     socket.on('oda-degis', (yeniOda) => {
-
-        // Eğer zaten bir odadaysa önce eski odadan çıkış yapsın
-
         if(socket.currentRoom) {
-
             socket.leave(socket.currentRoom);
-
             if (odadakiOyuncular[socket.currentRoom]) {
-
                 let eskiOda = socket.currentRoom;
-
                 odadakiOyuncular[eskiOda] = odadakiOyuncular[eskiOda].filter(o => o.id !== socket.id);
-
-               
-
-                // Eğer sıradaki oyuncu odadan çıktıysa sırayı hemen başkasına devret
-
                 if (odadakiOyuncular[eskiOda].aktifSiraId === socket.id) {
-
                     sirayiDegistir(eskiOda);
-
                 }
-
                 odayiGuncelle(eskiOda);
-
             }
-
         }
-
-
-
         socket.join(yeniOda);
-
         socket.currentRoom = yeniOda;
-
         socket.emit('festival-bilgisi', festivaller);
-
-       
-
-        // Eğer odada daha önce ilan edilmiş bir Dünya Şampiyonası şehri varsa yeni gelen oyuncuya da bildir
-
+        
         if (odadakiOyuncular[yeniOda] && odadakiOyuncular[yeniOda].dunyaSampiyonasiSehirId !== undefined) {
-
             socket.emit('sampiyona-guncelle', { sehirId: odadakiOyuncular[yeniOda].dunyaSampiyonasiSehirId });
-
         }
-
     });
 
-
+    // 2. OYUNCU BİLGİLERİYLE KATILDIĞINDA
+    socket.on('yeni-oyuncu-katildi', (data) => {
+        const oda = socket.currentRoom || "genel";
+        if (!odadakiOyuncular[oda]) {
+            odadakiOyuncular[oda] = [];
+            odadakiOyuncular[oda].aktifSiraId = null;
+            odadakiOyuncular[oda].zarAttiMi = false;
+            odadakiOyuncular[oda].dunyaSampiyonasiSehirId = null;
+        }
+        
+        odadakiOyuncular[oda] = odadakiOyuncular[oda].filter(o => o.id !== socket.id);
+        let oyuncuBilgisi = {
+            id: socket.id,
+            nick: data.nick || `Oyuncu_${Math.floor(Math.random()*100)}`,
+            avatar: data.avatar,
+            pos: 0,
+            money: 2000000 
+        };
+        
+        odadakiOyuncular[oda].push(oyuncuBilgisi);
+        
+        if (!odadakiOyuncular[oda].aktifSiraId) {
+            odadakiOyuncular[oda].aktifSiraId = socket.id;
+        }
+        
+        socket.to(oda).emit('oyuncu-listesini-guncelle', oyuncuBilgisi);
+        socket.emit('mevcut-oyuncular', odadakiOyuncular[oda]);
+        io.to(oda).emit('sira-guncelle', { aktifSiraId: odadakiOyuncular[oda].aktifSiraId });
+        odayiGuncelle(oda);
+    });
 
     // 2. OYUNCU BİLGİLERİYLE KATILDIĞINDA
 
-    socket.on('yeni-oyuncu-katildi', (data) => {
 
-        const oda = socket.currentRoom || "genel";
-
-        if (!odadakiOyuncular[oda]) {
-
-            odadakiOyuncular[oda] = [];
-
-            odadakiOyuncular[oda].aktifSiraId = null;
-
-            odadakiOyuncular[oda].zarAttiMi = false;
-
-            odadakiOyuncular[oda].dunyaSampiyonasiSehirId = null; // Oda bazlı şampiyona takibi
-
-        }
 
        
 
@@ -228,7 +208,7 @@ io.on('connection', (socket) => {
 
         odayiGuncelle(oda);
 
-    });
+    ;
 
 
 
@@ -422,11 +402,9 @@ socket.on('mulk-islem', (data) => {
 
 // Render veya yerel port için dinamik port kontrolü
 
-socket.on('disconnect', () => {
-        // ... (kodların)
-        odayiGuncelle(oda); 
-    });
-}); // <--- BU PARANTEZ EKSİKTİ! Bu, 90. satırdaki 'io.on'u kapatır.
+
+; 
+});// <--- BU PARANTEZ EKSİKTİ! Bu, 90. satırdaki 'io.on'u kapatır.
 
 // Render veya yerel port için dinamik port kontrolü
 const PORT = process.env.PORT || 3000;
