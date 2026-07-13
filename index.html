@@ -2528,6 +2528,50 @@ socket.on('zar-sonucu', (data) => {
 });
 
     // 4. HAPİS VE ÖZEL DURUM MANTIĞI
+    socket.on('zar-sonucu', (data) => {
+    // 1. ZAR DÖNGÜSÜNÜ KESİN DURDUR
+    if (window.zarKaristirici) {
+        clearInterval(window.zarKaristirici);
+        window.zarKaristirici = null;
+    }
+
+    d1.classList.remove('dice-shake');
+    d2.classList.remove('dice-shake');
+    zarBtn.disabled = true; // Zar sonucu geldiği an butonu kilitle
+    
+    d1.innerText = zarEmojileri[data.zar1];
+    d2.innerText = zarEmojileri[data.zar2];
+    addLog(`Zar Atıldı: [${data.deger}]`);
+
+    // 2. Oyuncuyu bul
+    let yuruyenOyuncuId = data.oyuncuId;
+    let hedefOyuncu = tumOyuncularListesi.find(o => o.id === yuruyenOyuncuId);
+    if (!hedefOyuncu) {
+        hedefOyuncu = { id: yuruyenOyuncuId, pos: 0, avatar: '/public/avatarlar/avatar1.jpg' };
+        tumOyuncularListesi.push(hedefOyuncu);
+    }
+
+    // 3. PİYONU YÜRÜT
+    let yeniHedef = (hedefOyuncu.pos + data.deger) % 32;
+
+    piyonuYurut(yuruyenOyuncuId, yeniHedef, () => {
+        hedefOyuncu.pos = yeniHedef;
+        
+        // Sadece zar atan oyuncunun oyun mantığını çalıştır
+        if (yuruyenOyuncuId === socket.id) {
+            benimKarakter.pos = yeniHedef;
+            addLog(`${haritaDizisi[yeniHedef]?.ad || "Bilinmeyen"} konumuna varıldı.`);
+            
+            if(haritaDizisi[yeniHedef]?.color === "chance") { 
+                tetikleSansKarti(); 
+            } else { 
+                aksiyonHesapla(yeniHedef, data.cift); 
+            }
+        }
+        ekranıYenile();
+    });
+
+    // 4. HAPİS VE ÖZEL DURUM MANTIĞI (Bu blok artık fonksiyonun içinde!)
     if (yuruyenOyuncuId === socket.id) {
         if (benimKarakter.inJail) {
             if (data.cift) {
@@ -2556,11 +2600,13 @@ socket.on('zar-sonucu', (data) => {
                     socket.emit('piyon-hareket-etti', { yeniPos: 8 });
                     return;
                 }
-            } else { ciftZarSayaci = 0; }
+            } else { 
+                ciftZarSayaci = 0; 
+            }
         }
         socket.emit('piyon-hareket-etti', { yeniPos: yeniHedef });
     } 
-
+});
 
 
 
@@ -3656,6 +3702,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 3. MÜLK GÜNCELLEMELERİNİ YAKALA (Senin aradığın o önemli dinleyici)
+        // 3. MÜLK GÜNCELLEMELERİNİ YAKALA
         socket.on('mulk-islem-bilgisi', (data) => {
             if (data.guncelMulkler) {
                 data.guncelMulkler.forEach((guncelKare, index) => {
@@ -3667,14 +3714,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 refreshTradeSelectBoxes();
             }
         });
-
-
     </script>
-
-
-
 </body>
+</html>
 
 
-
-</html> 
+    
