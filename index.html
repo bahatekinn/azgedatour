@@ -3521,23 +3521,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-        function selectAvatar(element, imgPath) {
-
-
-
-            document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-
-
-
-            element.classList.add('selected');
-
-
-
-            window.OYUN_DATA.secilenAvatar = imgPath;
-
-
-
-        }
+       function selectAvatar(element, imgPath) {
+    // Tüm avatar seçeneklerinden 'selected' sınıfını temizle
+    const options = document.querySelectorAll('.avatar-option');
+    options.forEach(el => el.classList.remove('selected'));
+    
+    // Tıklanan elemana 'selected' sınıfını ekle
+    element.classList.add('selected');
+    
+    // Global veri yapısını güncelle
+    if (window.OYUN_DATA) {
+        window.OYUN_DATA.secilenAvatar = imgPath;
+    }
+}
 
 
 
